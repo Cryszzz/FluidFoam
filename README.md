@@ -3,4 +3,6 @@ The cmake is OK, but the library path for glew, partio and zlib need to be chang
 
 ### The generated .dll can be add to the houdini /dso folder but cannot be loaded to houdini! Still trying to figure out why but I am very tired and will solve this when I wake up. The node's registered name supposed to be *MyPartioEmitter*
 
+In the scripts folder you may find the python code to generate the .bgeo file inside houdini.
+
 # FluidFoam
