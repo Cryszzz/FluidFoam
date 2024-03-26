@@ -1,0 +1,5 @@
+D:/PennCGGT/CIS6600/autoringTool/houdiniPlugin/CMakeFiles/houdiniPlugin.dir
+D:/PennCGGT/CIS6600/autoringTool/houdiniPlugin/CMakeFiles/ALL_BUILD.dir
+D:/PennCGGT/CIS6600/autoringTool/houdiniPlugin/extern/glew/CMakeFiles/glew.dir
+D:/PennCGGT/CIS6600/autoringTool/houdiniPlugin/extern/zlib/CMakeFiles/zlib.dir
+D:/PennCGGT/CIS6600/autoringTool/houdiniPlugin/extern/partio/src/lib/CMakeFiles/partio.dir

@@ -1,0 +1,22 @@
+﻿  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  gzio.c
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(131,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(181,24): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(226,5): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(627,11): warning C4996: '_vsnprintf': This function or variable may be unsafe. Consider using _vsnprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(1001,38): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(1008,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(1009,5): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\extern\zlib\src\gzio.c(1010,5): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  infback.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  trees.c
+  uncompr.c
+  zutil.c
+  正在生成代码...
+  zlib.vcxproj -> D:\PennCGGT\CIS6600\autoringTool\houdiniPlugin\lib\Debug\zlib_d.lib
