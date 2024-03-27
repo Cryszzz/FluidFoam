@@ -1,47 +1,23 @@
-#include <UT/UT_DSOVersion.h>
-//#include <RE/RE_EGLServer.h>
 
-
+#include <SOP/SOP_Node.h>
 #include <UT/UT_Math.h>
 #include <UT/UT_Interrupt.h>
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimPoly.h>
+#include <GU/GU_PrimTube.h>
 #include <GU/GU_PrimSphere.h>
 #include <CH/CH_LocalVariable.h>
-#include <CH/CH_Manager.h>
 #include <PRM/PRM_Include.h>
 #include <PRM/PRM_SpareData.h>
-#include <OP/OP_Operator.h>
-#include <OP/OP_OperatorTable.h>
-#include <UT/UT_Debug.h>
-#include <UT/UT_WorkBuffer.h>
-
-#include <limits.h>
-#include "PartioPlugin.h"
-
-
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <filesystem>
+#include "Visualizer.h"
 using namespace HDK_Sample;
+namespace fs = std::filesystem;
 
-///
-/// newSopOperator is the hook that Houdini grabs from this dll
-/// and invokes to register the SOP.  In this case we add ourselves
-/// to the specified operator table.
-///
-void
-newSopOperator(OP_OperatorTable* table)
-{
-	table->addOperator(
-		new OP_Operator("CusPartioEmitter",			// Internal name
-			"MyPartioEmitter",			// UI name
-			SOP_PartioEmitter::myConstructor,	// How to build the SOP
-			SOP_PartioEmitter::myTemplateList,	// My parameters
-			0,				// Min # of sources
-			10,				// Max # of sources
-			SOP_PartioEmitter::myVariables,	// Local variables
-			OP_FLAG_GENERATOR)		// Flag it as generator
-	);
-	std::cout << "MyPartioEmitter initialized!" << std::endl;
-}
+#include <cstdlib> // For std::system
 
 // Declare parameters' name for the SOP
 static PRM_Name partioFile("partioFile", "Partio File Path");
@@ -61,7 +37,7 @@ static PRM_Default frameIndexDefault(0.0);
 
 
 PRM_Template
-SOP_PartioEmitter::myTemplateList[] = {
+SOP_VISUALIZER::myTemplateList[] = {
 	{PRM_Template(PRM_FILE, 1, &partioFile, &partioFileDefault, 0)},
 	{PRM_Template(PRM_STRING, 1, &colorAttrName, &colorAttrNameDefault, 0)},
 	{PRM_Template(PRM_STRING, 1, &rotationAttrName, &rotationAttrNameDefault, 0)},
@@ -80,14 +56,14 @@ enum {
 };
 
 CH_LocalVariable
-SOP_PartioEmitter::myVariables[] = {
+SOP_VISUALIZER::myVariables[] = {
 	{ "PT",	VAR_PT, 0 },		// The table provides a mapping
 	{ "NPT",	VAR_NPT, 0 },		// from text string to integer token
 	{ 0, 0, 0 },
 };
 
 bool
-SOP_PartioEmitter::evalVariableValue(fpreal& val, int index, int thread)
+SOP_VISUALIZER::evalVariableValue(fpreal& val, int index, int thread)
 {
 	// myCurrPoint will be negative when we're not cooking so only try to
 	// handle the local variables when we have a valid myCurrPoint index.
@@ -112,14 +88,14 @@ SOP_PartioEmitter::evalVariableValue(fpreal& val, int index, int thread)
 }
 
 OP_Node*
-SOP_PartioEmitter::myConstructor(OP_Network* net,
+SOP_VISUALIZER::myConstructor(OP_Network* net,
 	const char* name,
 	OP_Operator* op)
 {
-	return new SOP_PartioEmitter(net, name, op);
+	return new SOP_VISUALIZER(net, name, op);
 }
 
-SOP_PartioEmitter::SOP_PartioEmitter(OP_Network* net,
+SOP_VISUALIZER::SOP_VISUALIZER(OP_Network* net,
 	const char* name,
 	OP_Operator* op)
 	: SOP_Node(net, name, op)
@@ -127,19 +103,19 @@ SOP_PartioEmitter::SOP_PartioEmitter(OP_Network* net,
 	myCurrPoint = -1;
 }
 
-SOP_PartioEmitter::~SOP_PartioEmitter()
+SOP_VISUALIZER::~SOP_VISUALIZER()
 {
 }
 
 unsigned
-SOP_PartioEmitter::disableParms()
+SOP_VISUALIZER::disableParms()
 {
 	unsigned changes = 0;
 	return changes;
 }
 
 OP_ERROR
-SOP_PartioEmitter::cookMySop(OP_Context& context)
+SOP_VISUALIZER::cookMySop(OP_Context& context)
 {
 	std::cout << "Cooking SOP" << std::endl;
 	fpreal	now = context.getTime();
@@ -298,7 +274,7 @@ SOP_PartioEmitter::cookMySop(OP_Context& context)
 }
 
 bool
-SOP_PartioEmitter::readParticles(const std::string& fileName, const std::string& colorAttrName, const std::string& rotationAttrName) {
+SOP_VISUALIZER::readParticles(const std::string& fileName, const std::string& colorAttrName, const std::string& rotationAttrName) {
 	std::cout << "Reading Partio data from file: " << fileName << std::endl;
 	
 

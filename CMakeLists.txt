@@ -10,8 +10,9 @@ mark_as_advanced(CMAKE_BUILD_TYPE CMAKE_CONFIGURATION_TYPES)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(HOUDINI_INSTALL_PATH "E:/houdini/Houdini 20.0.625")
+set(HOUDINI_INSTALL_PATH "C:/Program Files/Side Effects Software/Houdini 20.0.590")
 set(HOUDINI_LIB_PATH "${HOUDINI_INSTALL_PATH}/custom/houdini/dsolib")
+set(Partio_LIBRARIES "${CMAKE_SOURCE_DIR}/lib/partio.lib") 
 
 if (NOT EXISTS "${HOUDINI_INSTALL_PATH}")
     message(FATAL_ERROR "Houdini install path not found: ${HOUDINI_INSTALL_PATH}")
@@ -23,19 +24,24 @@ endif()
 
 include_directories(
     "${HOUDINI_INSTALL_PATH}/toolkit/include"
+    "extern/partio/src/lib"
     "."
 )
 
 set(SOURCE_FILES
-    src/LSystem.cpp
-    src/PartioPlugin.C
+    src/Plugin.C
+    src/Simulator.cpp
+    src/FoamGenerator.cpp
+    src/Visualizer.cpp
     src/main.cpp
     src/vec.cpp
 )
 
 set(HEADER_FILES
-    src/LSystem.h
-    src/PartioPlugin.h
+    src/Plugin.h
+    src/FoamGenerator.h
+    src/Simulator.h
+    src/Visualizer.h
     src/matrix.h
     src/vec.h
 )
@@ -54,7 +60,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 link_directories(${HOUDINI_LIB_PATH})
 
 file(GLOB LIB_FILES "${HOUDINI_LIB_PATH}/*.lib")
-target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_FILES}")
+target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_FILES}" "${Partio_LIBRARIES}" )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"

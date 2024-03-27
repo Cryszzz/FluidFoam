@@ -1,18 +1,16 @@
+#ifndef __SOP_VISUALIZER_h__
+#define __SOP_VISUALIZER_h__
 
-#pragma once
 //#include <GEO/GEO_Point.h>
 //
 #include <GEO/GEO_AttributeHandle.h>
 #include <GEO/GEO_IOTranslator.h>
 #include <GEO/GEO_PrimPart.h>
-#include <SOP/SOP_Node.h>
-#include <vector>
-//#include <Partio/src/lib/Partio.h>
 #include <Partio.h>
 
 namespace HDK_Sample
 {
-    class SOP_PartioEmitter : public SOP_Node
+    class SOP_VISUALIZER : public SOP_Node
     {
     public:
         static OP_Node* myConstructor(OP_Network*, const char*,
@@ -27,8 +25,8 @@ namespace HDK_Sample
 
     protected:
 
-        SOP_PartioEmitter(OP_Network* net, const char* name, OP_Operator* op);
-        virtual ~SOP_PartioEmitter();
+        SOP_VISUALIZER(OP_Network* net, const char* name, OP_Operator* op);
+        virtual ~SOP_VISUALIZER();
 
         /// Disable parameters according to other parameters.
         virtual unsigned		 disableParms();
@@ -109,3 +107,5 @@ namespace HDK_Sample
         int		myTotalPoints;
     };
 }
+
+#endif
