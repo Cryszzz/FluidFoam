@@ -9,6 +9,8 @@
 #include <CH/CH_LocalVariable.h>
 #include <PRM/PRM_Include.h>
 #include <PRM/PRM_SpareData.h>
+#include <UT/UT_Map.h>
+#include <GU/GU_Detail.h>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -18,6 +20,8 @@ using namespace HDK_Sample;
 namespace fs = std::filesystem;
 
 #include <cstdlib> // For std::system
+
+
 
 // Declare parameters' name for the SOP
 static PRM_Name partioFile("partioFile", "Partio File Path");
@@ -33,7 +37,7 @@ static PRM_Default colorAttrNameDefault(0.0, "velocity");
 static PRM_Default rotationAttrNameDefault(0.0, "v");
 static PRM_Default minValDefault(0.0);
 static PRM_Default maxValDefault(1.0);
-static PRM_Default frameIndexDefault(0.0);
+static PRM_Default frameIndexDefault(1.0);
 
 
 PRM_Template
@@ -118,13 +122,15 @@ OP_ERROR
 SOP_VISUALIZER::cookMySop(OP_Context& context)
 {
 	std::cout << "Cooking SOP" << std::endl;
+	flags().setTimeDep(true);
+	//duplicatePointSource(0, context);
 	fpreal	now = context.getTime();
 	//fpreal fps = CHgetManager()->getFPS();
 	//int currentFrame = static_cast<int>(round(now * fps));
 	int currentFrame = context.getFrame();
+	std::cout << "Current frame: " << currentFrame << std::endl;
 	// Get the frame index from the parameter
-	float frameIdx;
-	frameIdx = currentFrame;
+	int frameIndex = currentFrame;
 
 	// Get the file path from the parameter
 	UT_String baseFilePath;
@@ -132,18 +138,16 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 
 	// Construct the dynamic file path using current frame
 	UT_String partioFilePath;
-	partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.toStdString().c_str(), currentFrame);
+	partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.toStdString().c_str(), frameIndex);
 
 	std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
 	// Get the color attribute name from the parameter
 	UT_String colorAttrName;
 	evalString(colorAttrName, "colorAttrName", 0, now);
-	//std::cout << "Color attribute name: " << colorAttrName.toStdString() << std::endl;
 
 	// Get the rotation attribute name from the parameter
 	UT_String rotationAttrName;
 	evalString(rotationAttrName, "rotationAttrName", 0, now);
-	//std::cout << "Rotation attribute name: " << rotationAttrName.toStdString() << std::endl;
 
 	// Get the min value from the parameter
 	float minVal;
@@ -154,20 +158,6 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 	maxVal = MAXVAL(now);
 
 	m_partioData = Partio::create();
-
-	// Read the partio file
-	/*if (myLastPartioFilePath != partioFilePath) {
-		myLastPartioFilePath = partioFilePath;
-		if (!readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
-		{
-			addError(SOP_ERR_INVALID_SRC, "Failed to read partio file");
-			return error();
-
-		}
-	}
-	else {
-		return error();
-	}*/
 	
 	myLastPartioFilePath = partioFilePath;
 	if (!readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
@@ -196,24 +186,27 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			std::cout << "Number of particles: " << numParticles << std::endl;
 			//UTdebugFormat("Number of attributes: {}", m_partioData->numAttributes());
 			for (unsigned int i = 0; i < numParticles; i++) {
+				UT_Vector3 posH;
+				if (m_posAttr.attributeIndex != 0xffffffff) {
+					const float* pos = m_partioData->data<float>(m_posAttr, i);   // This line is causing the error
+					posH = UT_Vector3(pos[0], pos[1], pos[2]);
+				}
 
-
-				const float* pos = m_partioData->data<float>(m_posAttr, i);
 				GA_Offset ptoff = gdp->appendPointOffset();
-				gdp->setPos3(ptoff, UT_Vector3(pos[0], pos[1], pos[2]));
+				
+				gdp->setPos3(ptoff, posH);
 				//std::cout << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-				// Create a sphere at each particle position
+				//Create a sphere at each particle position
 				GEO_Primitive* prim = GU_PrimSphere::build(gdp, /* divisions= */ 10);
 				GU_PrimSphere* sphere = dynamic_cast<GU_PrimSphere*>(prim);
 				if (sphere)
 				{
-					UT_Vector3 center(pos[0], pos[1], pos[2]);
+					UT_Vector3 center(posH);
 					UT_Vector4F spherePos(center, 1.0f);
 					// Get a reference to the sphere's vertex points
 					GEO_Primitive* prim = static_cast<GEO_Primitive*>(sphere);
 					GA_Offset startoff = prim->getPointOffset(0);
 					GA_Offset endoff = prim->getPointOffset(prim->getVertexCount() - 1);
-
 					// Translate all points of the sphere to the center position
 					for (GA_Offset ptoff = startoff; ptoff <= endoff; ++ptoff) {
 						UT_Vector4F posH = gdp->getPos4(ptoff); // Get current position in homogeneous coordinates
@@ -225,33 +218,41 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 					// Handle the error
 					//std::cerr << "Failed to create sphere primitive" << std::endl;
 				}
+				//std::cout << "Finished creating particle geometry" << std::endl;
 
-				// Assuming that m_velAttr is a valid velocity attribute from Partio
-				if (m_velAttr.attributeIndex != -1) {
-					const float* vel = m_partioData->data<float>(m_velAttr, i);
-					// Set velocity attribute for the point
-					GA_RWHandleV3 velocityHandle(gdp->findAttribute(GA_ATTRIB_POINT, "v"));
-					if (!velocityHandle.isValid()) {
-						// Create the velocity attribute if it doesn't exist
-						velocityHandle = GA_RWHandleV3(gdp->addFloatTuple(GA_ATTRIB_POINT, "v", 3));
-					}
-					velocityHandle.set(ptoff, UT_Vector3(vel[0], vel[1], vel[2]));
-					//std::cout << "vel: " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
-				}
 
-				// Assuming that m_idAttr is a valid ID attribute from Partio
-				if (m_idAttr.attributeIndex != -1) {
-					const int* id = m_partioData->data<int>(m_idAttr, i);
-					// Set id attribute for the point
-					GA_RWHandleI idHandle(gdp->findAttribute(GA_ATTRIB_POINT, "id"));
-					if (!idHandle.isValid()) {
-						// Create the ID attribute if it doesn't exist
-						idHandle = GA_RWHandleI(gdp->addIntTuple(GA_ATTRIB_POINT, "id", 1));
-					}
-					idHandle.set(ptoff, *id);
-					//std::cout << "id: " << *id << std::endl;
-				}
-				//const float* color = m_partioData->data<float>(m_userColorAttr, i);
+
+
+
+
+				//// Assuming that m_velAttr is a valid velocity attribute from Partio
+				//if (m_velAttr.attributeIndex != -1) {
+				//	const float* vel = m_partioData->data<float>(m_velAttr, i);
+				//	// Set velocity attribute for the point
+				//	GA_RWHandleV3 velocityHandle(gdp->findAttribute(GA_ATTRIB_POINT, "v"));
+				//	if (!velocityHandle.isValid()) {
+				//		// Create the velocity attribute if it doesn't exist
+				//		std::cout << "velocity attribute not found" << std::endl;
+				//		//velocityHandle = GA_RWHandleV3(gdp->addFloatTuple(GA_ATTRIB_POINT, "v", 3));
+				//	}
+				//	velocityHandle.set(ptoff, UT_Vector3(vel[0], vel[1], vel[2]));
+				//	//std::cout << "vel: " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
+				//}
+
+				//// Assuming that m_idAttr is a valid ID attribute from Partio
+				//if (m_idAttr.attributeIndex != -1) {
+				//	const int* id = m_partioData->data<int>(m_idAttr, i);
+				//	// Set id attribute for the point
+				//	GA_RWHandleI idHandle(gdp->findAttribute(GA_ATTRIB_POINT, "id"));
+				//	if (!idHandle.isValid()) {
+				//		// Create the ID attribute if it doesn't exist
+				//		std:: cout << "id attribute not found" << std::endl;
+				//		//idHandle = GA_RWHandleI(gdp->addIntTuple(GA_ATTRIB_POINT, "id", 1));
+				//	}
+				//	idHandle.set(ptoff, *id);
+				//	//std::cout << "id: " << *id << std::endl;
+				//}
+				////const float* color = m_partioData->data<float>(m_userColorAttr, i);
 
 			}
 

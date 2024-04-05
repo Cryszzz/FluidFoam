@@ -6,7 +6,12 @@
 #include <GEO/GEO_AttributeHandle.h>
 #include <GEO/GEO_IOTranslator.h>
 #include <GEO/GEO_PrimPart.h>
+#include <UT/UT_Map.h>
+#include <GU/GU_Detail.h>
 #include <Partio.h>
+
+
+
 
 namespace HDK_Sample
 {
@@ -76,6 +81,7 @@ namespace HDK_Sample
         fpreal ATTRIB_ROTATION(fpreal t) { return evalFloat("rotationAttrName", 0, t); }
         fpreal MINVAL(fpreal t) { return evalFloat("minVal", 0, t); }
         fpreal MAXVAL(fpreal t) { return evalFloat("maxVal", 0, t); }
+        fpreal FRAME(fpreal t) { return evalFloat("frameIndex", 0, t); }
 
         //GEO_PrimParticle* mySystem;
 
@@ -93,6 +99,7 @@ namespace HDK_Sample
 
         static int* myOffsets;
 
+        
 
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////
