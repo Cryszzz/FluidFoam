@@ -17,14 +17,31 @@ namespace fs = std::filesystem;
 
 #include <cstdlib> // For std::system
 
-void runFoamGenerator(int startFrame, int endFrame, float radius, int foamscale,std::string inputFile, std::string outputFile,float buoyancy,float drag,float lifemin, float lifemax) {
-   // std::string command = "FoamGenerator -s "+startFrame+" -e "+endFrame+" -r "+radius+" --foamscale "+foamscale+" -i "+inputFile+" -o "+outputFile+" -o "+outputFile+" -o "+outputFile;
-    //int result = std::system(command.c_str());
+void runFoamGenerator(int startFrame, int endFrame, float radius, int foamscale, std::string inputFile, std::string outputFile, float buoyancy, float drag, float lifemin, float lifemax) {
+    fs::path inputPath = fs::absolute(inputFile);
+    fs::path outputPath = fs::absolute(outputFile);
 
-    //std::cout<<command<<std::endl;
+    // Update the original string variables
+    inputFile = "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/partio/ParticleData_Fluid_#.bgeo";
+    outputFile = "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/foam/Foam_#.bgeo";
+    // Use std::to_string to convert numeric values to strings and build the command
+    std::string command = "FoamGenerator -s " + std::to_string(startFrame) +
+                          " -e " + std::to_string(endFrame) +
+                          " -r " + std::to_string(radius) +
+                          " --foamscale " + std::to_string(foamscale) +
+                          " -i " + inputFile +
+                          " -o " + outputFile +
+                          " --buoyancy " + std::to_string(buoyancy) +
+                          " --drag " + std::to_string(drag) ;
 
+    std::cout << command << std::endl;
+    int result = std::system(command.c_str());
+
+    // Check the result and respond accordingly
+    if (result != 0) {
+        std::cerr << "FoamGenerator command failed with code: " << result << std::endl;
+    }
 }
-
 static PRM_Name inputDirPathName("inputDirPath", "Input Directory Path");
 static PRM_Name outputDirPathName("outputDirPath", "Output Directory Path");
 static PRM_Name buoyancyName("buoyancy", "Buoyancy");
@@ -35,6 +52,7 @@ static PRM_Name lifeMaxName("lifeMax", "Lifetime Max");
 static PRM_Name startFrameName("startFrame", "Start Frame");
 static PRM_Name endFrameName("endFrame", "End Frame");
 static PRM_Name radiusName("radius", "Radius");
+static PRM_Name generateName("generate", "Generate");
 
 static PRM_Default inputDirPathDefault(0, "C:/Documents/Upenn/CIS6600/FINAL/Output/partio");
 static PRM_Default outputDirPathDefault(0, "C:/Documents/Upenn/CIS6600/FINAL/Output/foam");
@@ -46,6 +64,7 @@ static PRM_Default lifeMaxDefault(5.0);
 static PRM_Default startFrameDefault(1);
 static PRM_Default endFrameDefault(500);
 static PRM_Default radiusDefault(0.025f); // Note the 'f' to indicate a float literal
+static PRM_Default generateDefault(0);
 
 PRM_Template
 SOP_FOAMGENERATOR::myTemplateList[] = {
@@ -54,6 +73,7 @@ SOP_FOAMGENERATOR::myTemplateList[] = {
 // EXAMPLE : For the angle parameter this is how you should add into the template
 // PRM_Template(PRM_FLT,	PRM_Template::PRM_EXPORT_MIN, 1, &angleName, &angleDefault, 0),
 // Similarly add all the other parameters in the template format here
+    PRM_Template(PRM_TOGGLE, 1, &generateName, &generateDefault),
 	PRM_Template(PRM_INT, 1, &startFrameName, &startFrameDefault),
     PRM_Template(PRM_INT, 1, &endFrameName, &endFrameDefault),
     PRM_Template(PRM_FLT, 1, &radiusName, &radiusDefault),
@@ -153,6 +173,7 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
 {
 	fpreal	now = context.getTime();
 
+    bool currentCheckboxState = evalInt(generateName.getToken(), 0, now) != 0;
 	UT_String inputDir, outputDir;
     evalString(inputDir, inputDirPathName.getToken(), 0, now);
     evalString(outputDir, outputDirPathName.getToken(), 0, now);
@@ -175,7 +196,11 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
     int startFrame = evalInt(startFrameName.getToken(), 0, now);
     int endFrame = evalInt(endFrameName.getToken(), 0, now);
     float radius = evalFloat(radiusName.getToken(), 0, now);
-    runFoamGenerator(startFrame, endFrame, radius, foamScale, inputDir.toStdString(), outputDir.toStdString(),buoyancy,drag, lifeMin, lifeMax);
+    if (currentCheckboxState && !lastCheckboxState) {
+        runFoamGenerator(startFrame, endFrame, radius, foamScale, inputDir.toStdString(), outputDir.toStdString(),buoyancy,drag, lifeMin, lifeMax);
+    }
+    lastCheckboxState = currentCheckboxState;
+
 	// PUT YOUR CODE HERE
 	// Declare all the necessary variables for drawing cylinders for each branch 
     float		 rad, tx, ty, tz;
@@ -219,7 +244,7 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
 		// Use GU_PrimPoly poly = GU_PrimPoly::build(see what values it can take)
 		// Also use GA_Offset ptoff = poly->getPointOffset()
 		// and gdp->setPos3(ptoff,YOUR_POSITION_VECTOR) to build geometry.
-
+        
 
 
 

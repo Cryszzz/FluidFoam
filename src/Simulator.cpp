@@ -296,7 +296,7 @@ SOP_SIMULATOR::cookMySop(OP_Context &context)
 
 
     // Add gravitation as an array
-    
+    fs::path jsonFilePath = fs::absolute("parameters.json");
 	if (currentCheckboxState && !lastCheckboxState) {
         // The checkbox was just checked - Output the JSON file
         std::cout << "checked" << std::endl;
@@ -359,13 +359,18 @@ SOP_SIMULATOR::cookMySop(OP_Context &context)
 		jsonStream << "}\n";
 
 		// Write the constructed JSON-like string to a file
-		std::ofstream file("parameters.json");
+		
+		std::ofstream file(jsonFilePath);
 		if (file) {
 			file << jsonStream.str();
 		} else {
 			// Error handling
 			return error();
 		}
+
+
+    // Your existing code to create or modify geometry goes here.
+    // ...
 
     } else if (!currentCheckboxState && lastCheckboxState) {
         // The checkbox was just unchecked - Optionally handle this case
@@ -421,9 +426,25 @@ SOP_SIMULATOR::cookMySop(OP_Context &context)
 		// Also use GA_Offset ptoff = poly->getPointOffset()
 		// and gdp->setPos3(ptoff,YOUR_POSITION_VECTOR) to build geometry.
 
+		UT_String aname("json_file_path");
+		// Using GA_RWHandleS for string attributes
+		GA_RWHandleS attrib(gdp->findStringTuple(GA_ATTRIB_DETAIL, aname));
 
+		// Not present, so create the detail attribute:
+		if (!attrib.isValid()) {
+			attrib = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, aname, 1));
+		}
 
-
+		if (attrib.isValid()) {
+			// Store the value in the detail attribute
+			// NOTE: The detail is *always* at GA_Offset(0)
+			// Assuming jsonFilePath is a std::string or similar containing the file path
+			std::string jsonFilePathStr = jsonFilePath.string(); // Convert path to std::string
+			UT_String outvalue(jsonFilePathStr.c_str());
+			attrib.set(GA_Offset(0), outvalue); // Replace denseMode with the string variable
+			std::cout << "Attribute set to: " << jsonFilePath << std::endl;
+			attrib.bumpDataId(); // This is typically not necessary for setting attribute values
+		}
 
 		////////////////////////////////////////////////////////////////////////////////////////////
 
