@@ -13,6 +13,8 @@
 #include <iostream>
 #include <filesystem>
 #include "Simulator.h"
+#include "SPlisHSPlasH/XSPH.h"
+
 using namespace HDK_Sample;
 namespace fs = std::filesystem;
 
