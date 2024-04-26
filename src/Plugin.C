@@ -46,6 +46,26 @@ newSopOperator(OP_OperatorTable *table)
 			OP_FLAG_GENERATOR)		// Flag it as generator
 	);
 	table->addOperator(
+		new OP_Operator("CusFluidConfiguration",			// Internal name
+			"FluidConfiguration",			// UI name
+			SOP_FLUIDCONFIGURATION::myConstructor,	// How to build the SOP
+			SOP_FLUIDCONFIGURATION::myTemplateList,	// My parameters
+			0,				// Min # of sources
+			0,				// Max # of sources
+			SOP_FLUIDCONFIGURATION::myVariables,	// Local variables
+			OP_FLAG_GENERATOR)		// Flag it as generator
+	);
+	table->addOperator(
+		new OP_Operator("CusRigidBody",			// Internal name
+			"RigidBody",			// UI name
+			SOP_RIGIDBODY::myConstructor,	// How to build the SOP
+			SOP_RIGIDBODY::myTemplateList,	// My parameters
+			0,				// Min # of sources
+			0,				// Max # of sources
+			SOP_RIGIDBODY::myVariables,	// Local variables
+			OP_FLAG_GENERATOR)		// Flag it as generator
+	);
+	table->addOperator(
 		new OP_Operator("CusVisualizer",			// Internal name
 			"MyVisualizer",			// UI name
 			SOP_VISUALIZER::myConstructor,	// How to build the SOP

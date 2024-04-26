@@ -21,7 +21,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Paths for Houdini and Partio libraries
-set(HOUDINI_INSTALL_PATH "D:/houdini/Houdini20.0.625")
+set(HOUDINI_INSTALL_PATH "C:/Program Files/Side Effects Software/Houdini20.0.625")
 set(HOUDINI_LIB_PATH "${HOUDINI_INSTALL_PATH}/custom/houdini/dsolib")
 set(Partio_LIBRARIES "${CMAKE_SOURCE_DIR}/lib/partio.lib") 
 
@@ -47,8 +47,6 @@ if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif()
 set(TOPLEVEL_INCLUDE_DIR ${PROJECT_SOURCE_DIR})
 
-option(USE_PYTHON_BINDINGS "Build Python bindings." OFF)
-
 # Ensure all necessary external libraries for SPlisHSPlasH are available
 add_subdirectory("extern/zlib")
 add_subdirectory("extern/partio")
@@ -56,9 +54,6 @@ add_subdirectory("extern/md5")
 add_subdirectory("extern/tinyexpr")
 add_subdirectory("extern/glfw")
 add_subdirectory("extern/nfd")
-if (USE_PYTHON_BINDINGS)
-    add_subdirectory("extern/pybind")
-endif()
 
 find_package(Eigen3 REQUIRED)
 add_definitions(-DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
@@ -67,12 +62,15 @@ include(SetUpExternalProjects)
 # Now add the SPlisHSPlasH project directory
 add_subdirectory(SPlisHSPlasH)
 add_subdirectory(Utilities)
+# add_subdirectory(FoamGenerator)
 
 # Define source and header files
 set(SOURCE_FILES
     src/Plugin.C
     src/Simulator.cpp
-    src/FoamGenerator.cpp
+    src/FoamGeneratorNode.cpp
+    src/FluidConfiguration.cpp
+    src/RigidBody.cpp
     src/Visualizer.cpp
     src/main.cpp
     src/vec.cpp
@@ -80,7 +78,9 @@ set(SOURCE_FILES
 
 set(HEADER_FILES
     src/Plugin.h
-    src/FoamGenerator.h
+    src/FoamGeneratorNode.h
+    src/FluidConfiguration.h
+    src/RigidBody.h
     src/Simulator.h
     src/Visualizer.h
     src/matrix.h
