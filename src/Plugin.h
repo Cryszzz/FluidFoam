@@ -6,5 +6,6 @@
 #include "Simulator.h"
 #include "FoamGenerator.h"
 #include "Visualizer.h"
+#include "FluidSimulator.h""
 
 #endif

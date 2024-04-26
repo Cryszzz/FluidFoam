@@ -21,7 +21,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Paths for Houdini and Partio libraries
-set(HOUDINI_INSTALL_PATH "D:/houdini/Houdini20.0.625")
+set(HOUDINI_INSTALL_PATH "E:/houdini/Houdini 20.0.625")
 set(HOUDINI_LIB_PATH "${HOUDINI_INSTALL_PATH}/custom/houdini/dsolib")
 set(Partio_LIBRARIES "${CMAKE_SOURCE_DIR}/lib/partio.lib") 
 
@@ -72,19 +72,26 @@ add_subdirectory(Utilities)
 set(SOURCE_FILES
     src/Plugin.C
     src/Simulator.cpp
-    src/FoamGenerator.cpp
     src/Visualizer.cpp
     src/main.cpp
     src/vec.cpp
+    src/FluidSimulator.cpp
+    src/FoamGeneratorNode.cpp
+    src/FluidConfiguration.cpp
+    src/RigidBody.cpp
+    
 )
 
 set(HEADER_FILES
     src/Plugin.h
-    src/FoamGenerator.h
     src/Simulator.h
     src/Visualizer.h
     src/matrix.h
     src/vec.h
+    src/FluidSimulator.h
+    src/FoamGeneratorNode.h
+    src/FluidConfiguration.h
+    src/RigidBody.h
 )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${HEADER_FILES})

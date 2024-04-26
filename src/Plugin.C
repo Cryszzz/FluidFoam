@@ -25,16 +25,30 @@ using namespace HDK_Sample;
 void
 newSopOperator(OP_OperatorTable *table)
 {
+	auto sim = new OP_Operator("CusSPHSimulator",			// Internal name
+		"Simulator",			// UI name
+		SOP_SIMULATOR::myConstructor,	// How to build the SOP
+		SOP_SIMULATOR::myTemplateList,	// My parameters
+		1,				// Min # of sources
+		OP_MULTI_INPUT_MAX,				// Max # of sources
+		SOP_SIMULATOR::myVariables,	// Local variables
+		OP_FLAG_GENERATOR);
+	sim->setNumOrderedInputs(1);
     table->addOperator(
-	    new OP_Operator("CusSPHSimulator",			// Internal name
-			    "Simulator",			// UI name
-				 SOP_SIMULATOR::myConstructor,	// How to build the SOP
-				 SOP_SIMULATOR::myTemplateList,	// My parameters
-			     0,				// Min # of sources
-			     0,				// Max # of sources
-				 SOP_SIMULATOR::myVariables,	// Local variables
-			     OP_FLAG_GENERATOR)		// Flag it as generator
+	    	sim// Flag it as generator
 	    );
+	auto fluid_sim = new OP_Operator("CusFluidSimulator",			// Internal name
+		"FluidSimulator",			// UI name
+		SOP_FUILDSIMULATOR::myConstructor,	// How to build the SOP
+		SOP_FUILDSIMULATOR::myTemplateList,	// My parameters
+		1,				// Min # of sources
+		OP_MULTI_INPUT_MAX,				// Max # of sources
+		SOP_FUILDSIMULATOR::myVariables,	// Local variables
+		OP_FLAG_GENERATOR);
+	fluid_sim->setNumOrderedInputs(1);
+	table->addOperator(
+		fluid_sim// Flag it as generator
+	);
 	table->addOperator(
 		new OP_Operator("CusFoamGenerator",			// Internal name
 			"FoamGenerator",			// UI name

@@ -7,6 +7,10 @@
 #include <CH/CH_LocalVariable.h>
 #include <PRM/PRM_Include.h>
 #include <PRM/PRM_SpareData.h>
+#include <OP/OP_OperatorTable.h>
+#include <OP/OP_AutoLockInputs.h>
+#include <OP/OP_Operator.h>
+
 
 #include <fstream>
 #include <sstream>
@@ -416,6 +420,21 @@ SOP_SIMULATOR::cookMySop(OP_Context &context)
 	    divisions = 4;
 	}
 	gdp->clearAndDestroy();
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	// test on the input geometry
+	// Access input geometry
+	OP_AutoLockInputs inputs(this);
+	if (inputs.lock(context) >= UT_ERROR_ABORT)
+		return error();
+
+	// Duplicate our incoming geometry with the hint that we only
+	// altered points.  Thus, if our input was unchanged, we can
+// easily roll back our changes by copying point values.
+	duplicatePointSource(0, context);
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Start the interrupt server
 	if (boss->opStart("Building LSYSTEM"))

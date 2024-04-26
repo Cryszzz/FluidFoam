@@ -11,7 +11,7 @@
 #include <sstream>
 #include <iostream>
 #include <filesystem>
-#include "FoamGenerator.h"
+#include "FoamGeneratorNode.h"
 using namespace HDK_Sample;
 namespace fs = std::filesystem;
 
@@ -22,8 +22,8 @@ void runFoamGenerator(int startFrame, int endFrame, float radius, int foamscale,
     fs::path outputPath = fs::absolute(outputFile);
 
     // Update the original string variables
-    inputFile = "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/partio/ParticleData_Fluid_#.bgeo";
-    outputFile = "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/foam/Foam_#.bgeo";
+    inputFile = inputFile;
+    outputFile = outputFile;
     // Use std::to_string to convert numeric values to strings and build the command
     std::string command = "FoamGenerator -s " + std::to_string(startFrame) +
                           " -e " + std::to_string(endFrame) +
