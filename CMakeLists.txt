@@ -47,8 +47,6 @@ if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif()
 set(TOPLEVEL_INCLUDE_DIR ${PROJECT_SOURCE_DIR})
 
-option(USE_PYTHON_BINDINGS "Build Python bindings." OFF)
-
 # Ensure all necessary external libraries for SPlisHSPlasH are available
 add_subdirectory("extern/zlib")
 add_subdirectory("extern/partio")
@@ -56,9 +54,6 @@ add_subdirectory("extern/md5")
 add_subdirectory("extern/tinyexpr")
 add_subdirectory("extern/glfw")
 add_subdirectory("extern/nfd")
-if (USE_PYTHON_BINDINGS)
-    add_subdirectory("extern/pybind")
-endif()
 
 find_package(Eigen3 REQUIRED)
 add_definitions(-DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
@@ -67,6 +62,7 @@ include(SetUpExternalProjects)
 # Now add the SPlisHSPlasH project directory
 add_subdirectory(SPlisHSPlasH)
 add_subdirectory(Utilities)
+# add_subdirectory(FoamGenerator)
 
 # Define source and header files
 set(SOURCE_FILES

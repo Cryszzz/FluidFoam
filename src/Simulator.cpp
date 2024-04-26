@@ -347,6 +347,7 @@ SOP_SIMULATOR::cookMySop(OP_Context &context)
 		jsonStream << "    \"geometryFile\": \"../models/UnitBox.obj\",\n";
 		jsonStream << "    \"translation\": [" << translation[0] << ", " << translation[1] << ", " << translation[2] << "],\n";
 		jsonStream << "    \"rotationAxis\": [" << rotationAxis[0] << ", " << rotationAxis[1] << ", " << rotationAxis[2] << "],\n";
+		jsonStream << "    \"rotationAngle\": " << rotationAngle << ",\n";
 		jsonStream << "    \"scale\": [" << scale[0] << ", " << scale[1] << ", " << scale[2] << "],\n";
 		jsonStream << "    \"color\": [" << color[0] << ", " << color[1] << ", " << color[2] << ", " << color[3] << "],\n";
 		jsonStream << "    \"isDynamic\": " << (isDynamic ? "true" : "false") << ",\n";

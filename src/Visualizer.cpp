@@ -197,29 +197,6 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 				gdp->setPos3(ptoff, posH);
 				//std::cout << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
 				//Create a sphere at each particle position
-				//GEO_Primitive* prim = GU_PrimSphere::build(gdp, /* divisions= */ 10);
-				//GU_PrimSphere* sphere = dynamic_cast<GU_PrimSphere*>(prim);
-				//if (sphere)
-				//{
-				//	UT_Vector3 center(posH);
-				//	UT_Vector4F spherePos(center, 1.0f);
-				//	// Get a reference to the sphere's vertex points
-				//	GEO_Primitive* prim = static_cast<GEO_Primitive*>(sphere);
-				//	GA_Offset startoff = prim->getPointOffset(0);
-				//	GA_Offset endoff = prim->getPointOffset(prim->getVertexCount() - 1);
-				//	// Translate all points of the sphere to the center position
-				//	for (GA_Offset ptoff = startoff; ptoff <= endoff; ++ptoff) {
-				//		UT_Vector4F posH = gdp->getPos4(ptoff); // Get current position in homogeneous coordinates
-				//		posH += spherePos; // Translate to the new position
-				//		gdp->setPos4(ptoff, posH); // Set the new position
-				//	}					
-				//}
-				//else {
-				//	// Handle the error
-				//	//std::cerr << "Failed to create sphere primitive" << std::endl;
-				//}
-				//std::cout << "Finished creating particle geometry" << std::endl;
-
 
 
 
