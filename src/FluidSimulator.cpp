@@ -19,6 +19,9 @@
 #include <string>
 #include "FluidSimulator.h"
 #include "SPlisHSPlasH/XSPH.h"
+#include "Utilities/Logger.h"
+#include "Utilities/Timing.h"
+#include "Utilities/Counting.h"
 
 
 using namespace HDK_Sample;
@@ -93,28 +96,30 @@ static PRM_Default jsonUpdateDefault(0);
 static PRM_Default simulateButtonNameDefault(0);
 
 static PRM_Name names[] = {
-	PRM_Name("particleRadius", "Particle Radius"),
-	PRM_Name("numberOfStepsPerRenderUpdate", "Number of Steps Per Render Update"),
-	PRM_Name("density0", "Initial Density"),
-	PRM_Name("simulationMethod", "Simulation Method"),
-	PRM_Name("gravitation", "Gravitation"),
-	PRM_Name("timeStepSize", "Time Step Size"),
-	PRM_Name("cflMethod", "CFL Method"),
 	PRM_Name("cflFactor", "CFL Factor"),
 	PRM_Name("cflMaxTimeStepSize", "CFL Max Time Step Size"),
-	PRM_Name("maxIterations", "Max Iterations"),
-	PRM_Name("maxError", "Max Error"),
-	PRM_Name("maxIterationsV", "Max Iterations V"),
-	PRM_Name("maxErrorV", "Max Error V"),
-	PRM_Name("stiffness", "Stiffness"),
-	PRM_Name("exponent", "Exponent"),
-	PRM_Name("velocityUpdateMethod", "Velocity Update Method"),
+	PRM_Name("cflMethod", "CFL Method"),
+	PRM_Name("cflMinTimeStepSize", "CFL Min Time Step Size"),
 	PRM_Name("enableDivergenceSolver", "Enable Divergence Solver"),
-	PRM_Name("particleAttributes", "Particle Attributes"),
-	PRM_Name("boundaryHandlingMethod", "Boundary Handling Method"),
-	PRM_Name("viscosityFluid", "Viscosity"),
-	PRM_Name("viscosityMethod", "ViscosityMethod"),
-	PRM_Name("colorMapType", "ColorMapType"),
+	PRM_Name("enableZSort", "Enable Z Sort"),
+	PRM_Name("Fluid_obj_path", "Fluid Object Path"),
+	PRM_Name("gravitation", "Gravitation"),
+	PRM_Name("interiaInverse", "Interia Inverse"),
+	PRM_Name("maxError", "Max Error"),
+	PRM_Name("maxErrorV", "Max Error V"),
+	PRM_Name("maxIterations", "Max Iterations"),
+	PRM_Name("maxIterationsV", "Max Iterations V"),
+	PRM_Name("particleRadius", "Particle Radius"),
+	PRM_Name("timeStepSize", "Time Step Size"),
+	PRM_Name("viscoMaxError", "Visco Max Error"),
+	PRM_Name("viscoMaxErrorOmega", "Visco Max Error Omega"),
+	PRM_Name("viscoMaxIter", "Visco Max Iter"),
+	PRM_Name("viscoMaxIterOmega", "Visco Max Iter Omega"),
+	PRM_Name("viscosity", "Viscosity"),
+	PRM_Name("viscosityMethod", "Viscosity Method"),
+	PRM_Name("viscosityOmega", "Viscosity Omega"),
+	PRM_Name("vorticity", "Vorticity"),
+	PRM_Name("vorticityMethod", "Vorticity Method"),
 
 	PRM_Name(0) // Sentinel to mark the end of the array
 };
@@ -149,53 +154,36 @@ float getStringParamAsFloat(static PRM_Name &name) {
 	fpreal	now = sop->lastCookTime;
 
 	//bool currentCheckboxState = sop->evalInt(jsonUpdateName.getToken(), 0, now) != 0;
-	float particleRadius = sop->evalFloat(names[0].getToken(), 0, now);
-	int numberOfStepsPerRenderUpdate = sop->evalInt(names[1].getToken(), 0, now);
-	float density0 = sop->evalFloat(names[2].getToken(), 0, now);
-	int simulationMethod = sop->evalInt(names[3].getToken(), 0, now);
-	float timeStepSize = sop->evalFloat(names[5].getToken(), 0, now);
-	int cflMethod = sop->evalInt(names[6].getToken(), 0, now);
-	float cflFactor = sop->evalFloat(names[7].getToken(), 0, now);
-	float cflMaxTimeStepSize = sop->evalFloat(names[8].getToken(), 0, now);
-	int maxIterations = sop->evalInt(names[9].getToken(), 0, now);
-	float maxError = sop->evalFloat(names[10].getToken(), 0, now);
-	int maxIterationsV = sop->evalInt(names[11].getToken(), 0, now);
-	float maxErrorV = sop->evalFloat(names[12].getToken(), 0, now);
-	float stiffness = sop->evalFloat(names[13].getToken(), 0, now);
-	int exponent = sop->evalInt(names[14].getToken(), 0, now);
-	int velocityUpdateMethod = sop->evalInt(names[15].getToken(), 0, now);
-	int enableDivergenceSolver = sop->evalInt(names[16].getToken(), 0, now); // This is a boolean represented as an int
-	int boundaryHandlingMethod = sop->evalInt(names[18].getToken(), 0, now);
+	float cflFactor = sop->evalFloat(names[0].getToken(), 0, now);
+	float cflMaxTimeStepSize = sop->evalFloat(names[1].getToken(), 0, now);
+	float cflMethod = sop->evalFloat(names[2].getToken(), 0, now);
+	float cflMinTimeStepSize = sop->evalFloat(names[3].getToken(), 0, now);
+	float enableDivergence = sop->evalFloat(names[4].getToken(), 0, now);
+	float enableZSort = sop->evalFloat(names[5].getToken(), 0, now);
+	UT_String fluid_obj_path;
+	sop->evalString(fluid_obj_path, names[6].getToken(), 0, now);
+	float gravitation = sop->evalFloat(names[7].getToken(), 0, now);
+	float interiaInverse = sop->evalFloat(names[8].getToken(), 0, now);
+	float maxError = sop->evalFloat(names[9].getToken(), 0, now);
+	float maxErrorV = sop->evalFloat(names[10].getToken(), 0, now);
+	float maxIterations = sop->evalFloat(names[11].getToken(), 0, now);
+	float maxIterationsV = sop->evalFloat(names[12].getToken(), 0, now);
+	float particleRadius = sop->evalFloat(names[13].getToken(), 0, now);
+	float timeStepSize = sop->evalFloat(names[14].getToken(), 0, now);
+	float viscoMaxError = sop->evalFloat(names[15].getToken(), 0, now);
+	float viscoMaxErrorOmega = sop->evalFloat(names[16].getToken(), 0, now);
+	float viscoMaxIter = sop->evalFloat(names[17].getToken(), 0, now);
+	float viscoMaxIterOmega = sop->evalFloat(names[18].getToken(), 0, now);
 	float viscosity = sop->evalFloat(names[19].getToken(), 0, now);
-	int viscosityMethod = sop->evalInt(names[20].getToken(), 0, now);
-	int colorMapType = sop->evalInt(names[21].getToken(), 0, now);
-
-	// Fetching vector values
-	UT_Vector3 gravitation;
-	sop->evalFloats(names[4].getToken(), gravitation.data(), now);
-
-	UT_Vector3 translation;
-	sop->evalFloats(translationName.getToken(), translation.data(), now);
-
-	UT_Vector3 rotationAxis;
-	sop->evalFloats(rotationAxisName.getToken(), rotationAxis.data(), now);
-
-	float rotationAngle = sop->evalFloat(rotationAngleName.getToken(), 0, now);
-
-	UT_Vector3 scale;
-	sop->evalFloats(scaleName.getToken(), scale.data(), now);
-
-	UT_Vector4 color;
-	sop->evalFloats(colorName.getToken(), color.data(), now); // Assuming RGBA
-
-	// Fetching string (particleAttributes)
-	UT_String particleAttributes;
-	sop->evalString(particleAttributes, names[17].getToken(), 0, now);
+	float viscosityMethod = sop->evalFloat(names[20].getToken(), 0, now);
+	float viscosityOmega = sop->evalFloat(names[21].getToken(), 0, now);
+	float vorticity = sop->evalFloat(names[22].getToken(), 0, now);
+	float vorticityMethod = sop->evalFloat(names[23].getToken(), 0, now);
 
 	// Assuming "isDynamic", "isWall", "mapInvert" are toggles represented as booleans
-	bool isDynamic = sop->evalInt(isDynamicName.getToken(), 0, now) != 0;
-	bool isWall = sop->evalInt(isWallName.getToken(), 0, now) != 0;
-	bool mapInvert = sop->evalInt(mapInvertName.getToken(), 0, now) != 0;
+	bool isDynamic = 0;
+	bool isWall = 0;
+	bool mapInvert = 0;
 
 	// Assuming "denseMode" is an integer
 	int denseMode = sop->evalInt(denseModeName.getToken(), 0, now);
@@ -207,14 +195,30 @@ float getStringParamAsFloat(static PRM_Name &name) {
 	sop->evalFloats(translationFBName.getToken(), translationFB.data(), now);
 	sop->evalFloats(scaleFBName.getToken(), scaleFB.data(), now);
 
+	// set the FluidBlockParameterObject
+	FluidModelParameterObject fluidModelParameterObject = FluidModelParameterObject();
+	fluidModelParameterObject.initParameters();
+	fluidModelParameterObject.samplesFile = fluid_obj_path.toStdString();
+
+	// set the MaterialParameterObject 
+	MaterialParameterObject materialParameterObject = MaterialParameterObject();
+	
+	// set the BoundaryParameterObject
+	BoundaryParameterObject boundaryParameterObject = BoundaryParameterObject();
+
+	// set the 
+
+	
+
+
 	try
 	{
 		static unsigned int m_stopCounter;
 		sop->mySim->init(particleRadius, false);
 		std::cout << "Simulator initialized." << std::endl;
-
 		// pass parameters to mySim
 		sop->mySim->setParticleRadius(particleRadius);
+
 		
 
 	}
@@ -239,51 +243,51 @@ SOP_FUILDSIMULATOR::myTemplateList[] = {
 		// simulation button
 		PRM_Template(PRM_CALLBACK, 1, &simulateButtonName, &simulateButtonNameDefault, nullptr, nullptr, &simulateFluid, nullptr),
 		PRM_Template(PRM_TOGGLE, 1, &jsonUpdateName, &jsonUpdateDefault),
-		PRM_Template(PRM_SWITCHER, 5, &tabName, tabList),
-		// Configuration tab
-		PRM_Template(PRM_FLT, 1, &names[0], &particleRadiusDefault),
-		PRM_Template(PRM_INT, 1, &names[1], &numberOfStepsPerRenderUpdateDefault),
-		PRM_Template(PRM_FLT, 1, &names[2], &density0Default),
-		PRM_Template(PRM_INT, 1, &names[3], &simulationMethodDefault),
-		PRM_Template(PRM_XYZ, 3, &names[4], gravitationDefaults),
-		PRM_Template(PRM_FLT, 1, &names[5], &timeStepSizeDefault),
-		PRM_Template(PRM_INT, 1, &names[6], &cflMethodDefault),
-		PRM_Template(PRM_FLT, 1, &names[7], &cflFactorDefault),
-		PRM_Template(PRM_FLT, 1, &names[8], &cflMaxTimeStepSizeDefault),
-		PRM_Template(PRM_INT, 1, &names[9], &maxIterationsDefault),
-		PRM_Template(PRM_FLT, 1, &names[10], &maxErrorDefault),
-		PRM_Template(PRM_INT, 1, &names[11], &maxIterationsVDefault),
-		PRM_Template(PRM_FLT, 1, &names[12], &maxErrorVDefault),
-		PRM_Template(PRM_FLT, 1, &names[13], &stiffnessDefault),
-		PRM_Template(PRM_INT, 1, &names[14], &exponentDefault),
-		PRM_Template(PRM_INT, 1, &names[15], &velocityUpdateMethodDefault),
-		PRM_Template(PRM_TOGGLE, 1, &names[16], &enableDivergenceSolverDefault),
-		PRM_Template(PRM_STRING, 1, &names[17], &particleAttributesDefault),
-		PRM_Template(PRM_INT, 1, &names[18], &boundaryHandlingMethodDefault),
+		//PRM_Template(PRM_SWITCHER, 5, &tabName, tabList),
+		//// Configuration tab
+		//PRM_Template(PRM_FLT, 1, &names[0], &particleRadiusDefault),
+		//PRM_Template(PRM_INT, 1, &names[1], &numberOfStepsPerRenderUpdateDefault),
+		//PRM_Template(PRM_FLT, 1, &names[2], &density0Default),
+		//PRM_Template(PRM_INT, 1, &names[3], &simulationMethodDefault),
+		//PRM_Template(PRM_XYZ, 3, &names[4], gravitationDefaults),
+		//PRM_Template(PRM_FLT, 1, &names[5], &timeStepSizeDefault),
+		//PRM_Template(PRM_INT, 1, &names[6], &cflMethodDefault),
+		//PRM_Template(PRM_FLT, 1, &names[7], &cflFactorDefault),
+		//PRM_Template(PRM_FLT, 1, &names[8], &cflMaxTimeStepSizeDefault),
+		//PRM_Template(PRM_INT, 1, &names[9], &maxIterationsDefault),
+		//PRM_Template(PRM_FLT, 1, &names[10], &maxErrorDefault),
+		//PRM_Template(PRM_INT, 1, &names[11], &maxIterationsVDefault),
+		//PRM_Template(PRM_FLT, 1, &names[12], &maxErrorVDefault),
+		//PRM_Template(PRM_FLT, 1, &names[13], &stiffnessDefault),
+		//PRM_Template(PRM_INT, 1, &names[14], &exponentDefault),
+		//PRM_Template(PRM_INT, 1, &names[15], &velocityUpdateMethodDefault),
+		//PRM_Template(PRM_TOGGLE, 1, &names[16], &enableDivergenceSolverDefault),
+		//PRM_Template(PRM_STRING, 1, &names[17], &particleAttributesDefault),
+		//PRM_Template(PRM_INT, 1, &names[18], &boundaryHandlingMethodDefault),
 
-		// Materials tab
-		PRM_Template(PRM_FLT, 1, &names[19], &viscosityDefault),
-		PRM_Template(PRM_INT, 1,  &names[20], &viscosityMethodDefault),
-		PRM_Template(PRM_INT, 1,  &names[21], &colorMapTypeDefault),
+		//// Materials tab
+		//PRM_Template(PRM_FLT, 1, &names[19], &viscosityDefault),
+		//PRM_Template(PRM_INT, 1,  &names[20], &viscosityMethodDefault),
+		//PRM_Template(PRM_INT, 1,  &names[21], &colorMapTypeDefault),
 
-		// RigidBodies tab
-		PRM_Template(PRM_XYZ, 3, &translationName, translationDefaults),
-		PRM_Template(PRM_XYZ, 3, &rotationAxisName, rotationAxisDefaults),
-		PRM_Template(PRM_FLT, 1, &rotationAngleName, &rotationAngleDefault),
-		PRM_Template(PRM_XYZ, 3, &scaleName, scaleDefaults),
-		PRM_Template(PRM_RGB, 4, &colorName, colorDefaults), // Use PRM_RGB for color if alpha not needed, else use PRM_RGBA
-		PRM_Template(PRM_TOGGLE, 1, &isDynamicName, &isDynamicDefault),
-		PRM_Template(PRM_TOGGLE, 1, &isWallName, &isWallDefault),
-		PRM_Template(PRM_TOGGLE, 1, &mapInvertName, &mapInvertDefault),
-		PRM_Template(PRM_FLT, 1, &mapThicknessName, &mapThicknessDefault),
-		PRM_Template(PRM_INT_XYZ, 3, &mapResolutionName, mapResolutionDefaults),
+		//// RigidBodies tab
+		//PRM_Template(PRM_XYZ, 3, &translationName, translationDefaults),
+		//PRM_Template(PRM_XYZ, 3, &rotationAxisName, rotationAxisDefaults),
+		//PRM_Template(PRM_FLT, 1, &rotationAngleName, &rotationAngleDefault),
+		//PRM_Template(PRM_XYZ, 3, &scaleName, scaleDefaults),
+		//PRM_Template(PRM_RGB, 4, &colorName, colorDefaults), // Use PRM_RGB for color if alpha not needed, else use PRM_RGBA
+		//PRM_Template(PRM_TOGGLE, 1, &isDynamicName, &isDynamicDefault),
+		//PRM_Template(PRM_TOGGLE, 1, &isWallName, &isWallDefault),
+		//PRM_Template(PRM_TOGGLE, 1, &mapInvertName, &mapInvertDefault),
+		//PRM_Template(PRM_FLT, 1, &mapThicknessName, &mapThicknessDefault),
+		//PRM_Template(PRM_INT_XYZ, 3, &mapResolutionName, mapResolutionDefaults),
 
-		// FluidBlocks tab
-		PRM_Template(PRM_INT, 1, &denseModeName, &denseModeDefault),
-		PRM_Template(PRM_XYZ, 3, &startName, startDefaults),
-		PRM_Template(PRM_XYZ, 3, &endName, endDefaults),
-		PRM_Template(PRM_XYZ, 3, &translationFBName, translationFBDefaults),
-		PRM_Template(PRM_XYZ, 3, &scaleFBName, scaleFBDefaults),
+		//// FluidBlocks tab
+		//PRM_Template(PRM_INT, 1, &denseModeName, &denseModeDefault),
+		//PRM_Template(PRM_XYZ, 3, &startName, startDefaults),
+		//PRM_Template(PRM_XYZ, 3, &endName, endDefaults),
+		//PRM_Template(PRM_XYZ, 3, &translationFBName, translationFBDefaults),
+		//PRM_Template(PRM_XYZ, 3, &scaleFBName, scaleFBDefaults),
 
 		PRM_Template() // Sentinel
 };
@@ -339,6 +343,7 @@ SOP_FUILDSIMULATOR::SOP_FUILDSIMULATOR(OP_Network* net, const char* name, OP_Ope
 	myCurrPoint = -1;	// To prevent garbage values from being returned
 	mySim = std::unique_ptr<SPH::Simulation>(new SPH::Simulation());
 	mySceneLoader = std::unique_ptr<Utilities::SceneLoader>(new Utilities::SceneLoader());
+	myScene = std::unique_ptr<Utilities::SceneLoader::Scene>(new Utilities::SceneLoader::Scene());
 }
 
 SOP_FUILDSIMULATOR::~SOP_FUILDSIMULATOR() {}
@@ -369,12 +374,114 @@ UT_String SOP_FUILDSIMULATOR::getParameters(GA_ROHandleS paraHandle) {
 
 void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 
-	GA_ROHandleS particleRadiusHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "particleRadius"));
+	/*GA_ROHandleS particleRadiusHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "particleRadius"));
 	UT_String particleRadius = getParameters(particleRadiusHandle);
 	std::cout << "Attribute set to: " << particleRadius.toStdString() << std::endl;
 	std::cout << "getToken value is:" << names[0].getToken() << std::endl;
 	setString(particleRadius, CH_StringMeaning(), names[0].getToken(), 0, t);
-	std::cout << "Attribute set to: " << names[0].getToken() << " in: " << evalFloat(names[0].getToken(), 0, t) << std::endl;
+	std::cout << "Attribute set to: " << names[0].getToken() << " in: " << evalFloat(names[0].getToken(), 0, t) << std::endl;*/
+
+	GA_ROHandleS cflFactorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflFactor"));
+	UT_String cflFactor = getParameters(cflFactorHandle);
+	setString(cflFactor, CH_StringMeaning(), names[0].getToken(), 0, t);
+
+	GA_ROHandleS cflMaxTimeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMaxTimeStepSize"));
+	UT_String cflMaxTimeStepSize = getParameters(cflMaxTimeStepSizeHandle);
+	setString(cflMaxTimeStepSize, CH_StringMeaning(), names[1].getToken(), 0, t);
+
+	GA_ROHandleS cflMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMethod"));
+	UT_String cflMethod = getParameters(cflMethodHandle);
+	setString(cflMethod, CH_StringMeaning(), names[2].getToken(), 0, t);
+
+	GA_ROHandleS cflMinTimeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMinTimeStepSize"));
+	UT_String cflMinTimeStepSize = getParameters(cflMinTimeStepSizeHandle);
+	setString(cflMinTimeStepSize, CH_StringMeaning(), names[3].getToken(), 0, t);
+
+	GA_ROHandleS enableDivergenceHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "enableDivergenceSolver"));
+	UT_String enableDivergence = getParameters(enableDivergenceHandle);
+	setString(enableDivergence, CH_StringMeaning(), names[4].getToken(), 0, t);
+
+	GA_ROHandleS enableZSortHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "enableZSort"));
+	UT_String enableZSort = getParameters(enableZSortHandle);
+	setString(enableZSort, CH_StringMeaning(), names[5].getToken(), 0, t);
+
+	GA_ROHandleS fluid_obj_pathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Fluid_obj_path"));
+	UT_String fluid_obj_path = getParameters(fluid_obj_pathHandle);
+	setString(fluid_obj_path, CH_StringMeaning(), names[6].getToken(), 0, t);
+
+	GA_ROHandleS gravitationHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "gravitation"));
+	UT_String gravitation = getParameters(gravitationHandle);
+	setString(gravitation, CH_StringMeaning(), names[7].getToken(), 0, t);
+
+	GA_ROHandleS interiaInverseHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "interiaInverse"));
+	UT_String interiaInverse = getParameters(interiaInverseHandle);
+	setString(interiaInverse, CH_StringMeaning(), names[8].getToken(), 0, t);
+
+	GA_ROHandleS maxErrorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxError"));
+	UT_String maxError = getParameters(maxErrorHandle);
+	setString(maxError, CH_StringMeaning(), names[9].getToken(), 0, t);
+
+	GA_ROHandleS maxErrorVHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxErrorV"));
+	UT_String maxErrorV = getParameters(maxErrorVHandle);
+	setString(maxErrorV, CH_StringMeaning(), names[10].getToken(), 0, t);
+
+	GA_ROHandleS maxIterationsHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxIterations"));
+	UT_String maxIterations = getParameters(maxIterationsHandle);
+	setString(maxIterations, CH_StringMeaning(), names[11].getToken(), 0, t);
+
+	GA_ROHandleS maxIterationsVHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxIterationsV"));
+	UT_String maxIterationsV = getParameters(maxIterationsVHandle);
+	setString(maxIterationsV, CH_StringMeaning(), names[12].getToken(), 0, t);
+
+	GA_ROHandleS particleRadiusHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "particleRadius"));
+	UT_String particleRadius = getParameters(particleRadiusHandle);
+	setString(particleRadius, CH_StringMeaning(), names[13].getToken(), 0, t);
+
+	GA_ROHandleS timeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "timeStepSize"));
+	UT_String timeStepSize = getParameters(timeStepSizeHandle);
+	setString(timeStepSize, CH_StringMeaning(), names[14].getToken(), 0, t);
+
+	GA_ROHandleS viscoMaxErrorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxError"));
+	UT_String viscoMaxError = getParameters(viscoMaxErrorHandle);
+	setString(viscoMaxError, CH_StringMeaning(), names[15].getToken(), 0, t);
+
+	GA_ROHandleS viscoMaxErrorOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxErrorOmega"));
+	UT_String viscoMaxErrorOmega = getParameters(viscoMaxErrorOmegaHandle);
+	setString(viscoMaxErrorOmega, CH_StringMeaning(), names[16].getToken(), 0, t);
+
+	GA_ROHandleS viscoMaxIterHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxIter"));
+	UT_String viscoMaxIter = getParameters(viscoMaxIterHandle);
+	setString(viscoMaxIter, CH_StringMeaning(), names[17].getToken(), 0, t);
+
+	GA_ROHandleS viscoMaxIterOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxIterOmega"));
+	UT_String viscoMaxIterOmega = getParameters(viscoMaxIterOmegaHandle);
+	setString(viscoMaxIterOmega, CH_StringMeaning(), names[18].getToken(), 0, t);
+
+	GA_ROHandleS viscosityHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosity"));
+	UT_String viscosity = getParameters(viscosityHandle);
+	setString(viscosity, CH_StringMeaning(), names[19].getToken(), 0, t);
+
+	GA_ROHandleS viscosityMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityMethod"));
+	UT_String viscosityMethod = getParameters(viscosityMethodHandle);
+	setString(viscosityMethod, CH_StringMeaning(), names[20].getToken(), 0, t);
+
+	GA_ROHandleS viscosityOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityOmega"));
+	UT_String viscosityOmega = getParameters(viscosityOmegaHandle);
+	setString(viscosityOmega, CH_StringMeaning(), names[21].getToken(), 0, t);
+
+	GA_ROHandleS vorticityHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "vorticity"));
+	UT_String vorticity = getParameters(vorticityHandle);
+	setString(vorticity, CH_StringMeaning(), names[22].getToken(), 0, t);
+
+	GA_ROHandleS vorticityMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "vorticityMethod"));
+	UT_String vorticityMethod = getParameters(vorticityMethodHandle);
+	setString(vorticityMethod, CH_StringMeaning(), names[23].getToken(), 0, t);
+
+
+
+
+
+
 
 #if 0
 	// Fetching the rest of the parameters
