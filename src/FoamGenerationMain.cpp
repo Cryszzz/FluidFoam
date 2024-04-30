@@ -156,7 +156,7 @@ inline unsigned int getNeighbor(const unsigned int pointSetIndex, const unsigned
 }
 
 
-void runSimulationFromNode(const std::unordered_map<std::string, std::any>& params) {
+/*void runSimulationFromNode(const std::unordered_map<std::string, std::any>& params) {
     REPORT_MEMORY_LEAKS;
 
     Utilities::logger.addSink(std::make_shared<Utilities::ConsoleSink>(Utilities::LogLevel::INFO));
@@ -191,7 +191,7 @@ void runSimulationFromNode(const std::unordered_map<std::string, std::any>& para
     } catch (const std::exception& e) {
         std::cerr << "Error in simulation: " << e.what() << std::endl;
     }
-}
+}*/
 /*
 // main 
 int main( int argc, char **argv )

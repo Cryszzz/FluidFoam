@@ -12,7 +12,7 @@
 #include <iostream>
 #include <filesystem>
 #include "FoamGeneratorNode.h"
-#include "FoamGenerationMain.h"
+//#include "FoamGenerationMain.h"
 
 using namespace HDK_Sample;
 namespace fs = std::filesystem;
@@ -172,7 +172,8 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
     UT_String inputDirPath, outputDirPath;
     evalString(inputDirPath, inputDirPathName.getToken(), 0, now);
     evalString(outputDirPath, outputDirPathName.getToken(), 0, now);
-    params["inputDirPath"] = inputDirPath.toStdString();
+    
+    /*params["inputDirPath"] = inputDirPath.toStdString();
     params["outputDirPath"] = outputDirPath.toStdString();
 
     // Reading and storing toggle (boolean) parameter
@@ -202,9 +203,10 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
 
     params["voFactor"] = evalInt(voFactorName.getToken(), 0, now);
     params["voMin"] = evalFloat(voLimitsName.getToken(), 0, now);
-    params["voMax"] = evalFloat(voLimitsName.getToken(), 1, now);
+    params["voMax"] = evalFloat(voLimitsName.getToken(), 1, now);*/
     
-    runSimulationFromNode(params); 
+    
+    //runSimulationFromNode(params); 
 
 	// PUT YOUR CODE HERE
 	// Declare all the necessary variables for drawing cylinders for each branch 
