@@ -53,6 +53,7 @@ add_subdirectory("extern/partio")
 add_subdirectory("extern/md5")
 add_subdirectory("extern/tinyexpr")
 add_subdirectory("extern/glfw")
+add_subdirectory("extern/imgui")
 add_subdirectory("extern/nfd")
 
 find_package(Eigen3 REQUIRED)
@@ -62,8 +63,11 @@ include(SetUpExternalProjects)
 # Now add the SPlisHSPlasH project directory
 add_subdirectory(SPlisHSPlasH)
 add_subdirectory(Utilities)
-# add_subdirectory(FoamGenerator)
 
+include(DataCopyTargets)
+# add_subdirectory(FoamGenerator)
+add_subdirectory(Simulator)
+message(STATUS "Checking directory: ${PROJECT_SOURCE_DIR}/data/shaders")
 # Define source and header files
 set(SOURCE_FILES
     src/Plugin.C
