@@ -12,59 +12,67 @@
 #include <iostream>
 #include <filesystem>
 #include "FoamGeneratorNode.h"
+#include "FoamGenerationMain.h"
+
 using namespace HDK_Sample;
 namespace fs = std::filesystem;
 
 #include <cstdlib> // For std::system
 
-void runFoamGenerator(int startFrame, int endFrame, float radius, int foamscale, std::string inputFile, std::string outputFile, float buoyancy, float drag, float lifemin, float lifemax) {
-    fs::path inputPath = fs::absolute(inputFile);
-    fs::path outputPath = fs::absolute(outputFile);
-
-    // Update the original string variables
-    inputFile = inputFile;
-    outputFile = outputFile;
-    // Use std::to_string to convert numeric values to strings and build the command
-    std::string command = "FoamGenerator -s " + std::to_string(startFrame) +
-                          " -e " + std::to_string(endFrame) +
-                          " -r " + std::to_string(radius) +
-                          " --foamscale " + std::to_string(foamscale) +
-                          " -i " + inputFile +
-                          " -o " + outputFile +
-                          " --buoyancy " + std::to_string(buoyancy) +
-                          " --drag " + std::to_string(drag) ;
-
-    std::cout << command << std::endl;
-    int result = std::system(command.c_str());
-
-    // Check the result and respond accordingly
-    if (result != 0) {
-        std::cerr << "FoamGenerator command failed with code: " << result << std::endl;
-    }
-}
 static PRM_Name inputDirPathName("inputDirPath", "Input Directory Path");
 static PRM_Name outputDirPathName("outputDirPath", "Output Directory Path");
-static PRM_Name buoyancyName("buoyancy", "Buoyancy");
-static PRM_Name dragName("drag", "Drag Coefficient");
-static PRM_Name foamScaleName("foamScale", "Foam Scale");
-static PRM_Name lifeMinName("lifeMin", "Lifetime Min");
-static PRM_Name lifeMaxName("lifeMax", "Lifetime Max");
-static PRM_Name startFrameName("startFrame", "Start Frame");
-static PRM_Name endFrameName("endFrame", "End Frame");
-static PRM_Name radiusName("radius", "Radius");
 static PRM_Name generateName("generate", "Generate");
 
 static PRM_Default inputDirPathDefault(0, "C:/Documents/Upenn/CIS6600/FINAL/Output/partio");
 static PRM_Default outputDirPathDefault(0, "C:/Documents/Upenn/CIS6600/FINAL/Output/foam");
+static PRM_Default generateDefault(0);
+
+static PRM_Name radiusName("radius", "Radius");
+static PRM_Name buoyancyName("buoyancy", "Buoyancy");
+static PRM_Name dragName("drag", "Drag Coefficient");
+static PRM_Name foamScaleName("foamScale", "Foam Scale");
+
 static PRM_Default buoyancyDefault(2.0);
 static PRM_Default dragDefault(1.0); // Assuming you need this parameter, as mentioned.
-static PRM_Default foamScaleDefault(1000);
-static PRM_Default lifeMinDefault(2.0);
-static PRM_Default lifeMaxDefault(5.0);
-static PRM_Default startFrameDefault(1);
-static PRM_Default endFrameDefault(500);
+static PRM_Default foamScaleDefault(300);
 static PRM_Default radiusDefault(0.025f); // Note the 'f' to indicate a float literal
-static PRM_Default generateDefault(0);
+
+
+static PRM_Name lifeLimitsName("life_limits", "Lifetime limits (min/max)");
+static PRM_Default lifeDefaults[] = { PRM_Default(2), PRM_Default(5) };
+
+static PRM_Name frameLimitsName("frame_limits", "Frame limits (start/end)");
+static PRM_Default frameDefaults[] = { PRM_Default(1), PRM_Default(100) };
+
+static PRM_Name taFactorName("ta", "Trapped air factor");
+static PRM_Name taLimitsName("ta_limits", "Trapped air limits (min/max)");
+static PRM_Default taFactorDefault(4000);
+static PRM_Default taDefaults[] = { PRM_Default(5), PRM_Default(20) };
+
+static PRM_Name wcFactorName("wc", "Wave crest factor");
+static PRM_Name wcLimitsName("wc_limits", "Wave crest limits (min/max)");
+static PRM_Default wcFactorDefault(50000);
+static PRM_Default wcDefaults[] = { PRM_Default(2), PRM_Default(8) }; 
+
+static PRM_Name voFactorName("vo", "Vorticity factor");
+static PRM_Name voLimitsName("vo_limits", "Vorticity limits (min/max)");
+static PRM_Default voFactorDefault(4000);
+static PRM_Default voDefaults[] = { PRM_Default(5), PRM_Default(20) };
+
+static PRM_Name splitGeneratorsName("splitgenerators", "Output different foam files depending on which potential generated the foam");
+static PRM_Name trappedAirGeneratorName("splitTrappedAir", "Trapped Air Generator");
+static PRM_Name waveCrestGeneratorName("splitWaveCrest", "Wave Crest Generator");
+static PRM_Name vorticityGeneratorName("splitVorticity", "Vorticity Generator");
+
+static PRM_Name         sopStringName("splittypes", "Output foam type");
+static PRM_Name         sopStrChoices[] =
+{
+    PRM_Name("splitFoam", "Foam Type"),
+    PRM_Name("splitSpray", "Spray Type"),
+    PRM_Name("splitBubbles", "Bubbles Type"),
+    PRM_Name(0)
+};
+static PRM_ChoiceList   sopStringMenu(PRM_CHOICELIST_TOGGLE, sopStrChoices);
 
 PRM_Template
 SOP_FOAMGENERATOR::myTemplateList[] = {
@@ -73,39 +81,25 @@ SOP_FOAMGENERATOR::myTemplateList[] = {
 // EXAMPLE : For the angle parameter this is how you should add into the template
 // PRM_Template(PRM_FLT,	PRM_Template::PRM_EXPORT_MIN, 1, &angleName, &angleDefault, 0),
 // Similarly add all the other parameters in the template format here
-    PRM_Template(PRM_TOGGLE, 1, &generateName, &generateDefault),
-	PRM_Template(PRM_INT, 1, &startFrameName, &startFrameDefault),
-    PRM_Template(PRM_INT, 1, &endFrameName, &endFrameDefault),
-    PRM_Template(PRM_FLT, 1, &radiusName, &radiusDefault),
-    PRM_Template(
-        PRM_FLT, 1, &buoyancyName, &buoyancyDefault
-    ),
-    // Assuming you need a parameter for drag as well
-    PRM_Template(
-        PRM_FLT, 1, &dragName, &dragDefault
-    ),
-    PRM_Template(
-        PRM_INT, 1, &foamScaleName, &foamScaleDefault
-    ),
-    // Lifetime Min/Max as two separate parameters
-    PRM_Template(
-        PRM_FLT, 1, &lifeMinName, &lifeMinDefault
-    ),
-    PRM_Template(
-        PRM_FLT, 1, &lifeMaxName, &lifeMaxDefault
-    ),
-    PRM_Template(
-        PRM_FILE,                             // Parameter type for directories
-        1,                                   // Number of elements (1 for a single directory path)
-        &inputDirPathName,                   // Parameter name
-        &inputDirPathDefault                 // Default value
-    ),
-    PRM_Template(
-        PRM_FILE,                             // Parameter type for directories
-        1,                                   // Number of elements
-        &outputDirPathName,                  // Parameter name
-        &outputDirPathDefault                // Default value
-    ),
+    PRM_Template(PRM_STRING, 1, &inputDirPathName, &inputDirPathDefault), // Input Directory Path
+    PRM_Template(PRM_STRING, 1, &outputDirPathName, &outputDirPathDefault), // Output Directory Path
+    PRM_Template(PRM_TOGGLE, 1, &generateName, &generateDefault), // Generate
+    
+    PRM_Template(PRM_FLT, 1, &radiusName, &radiusDefault), // Radius
+    PRM_Template(PRM_FLT, 1, &buoyancyName, &buoyancyDefault), // Buoyancy
+    PRM_Template(PRM_FLT, 1, &dragName, &dragDefault), // Drag Coefficient
+    PRM_Template(PRM_FLT, 1, &foamScaleName, &foamScaleDefault), // Foam Scale
+
+    PRM_Template(PRM_FLT, 2, &lifeLimitsName, lifeDefaults), // Lifetime limits (min/max)
+    PRM_Template(PRM_FLT, 2, &frameLimitsName, frameDefaults), // Frame limits (start/end)
+    PRM_Template(PRM_ORD, 1, &taFactorName, &taFactorDefault), // Trapped air factor
+    PRM_Template(PRM_FLT, 2, &taLimitsName, taDefaults), // Trapped air limits (min/max)
+    PRM_Template(PRM_ORD, 1, &wcFactorName, &wcFactorDefault), // Wave crest factor
+    PRM_Template(PRM_FLT, 2, &wcLimitsName, wcDefaults), // Wave crest limits (min/max)
+    PRM_Template(PRM_ORD, 1, &voFactorName, &voFactorDefault), // Vorticity factor
+    PRM_Template(PRM_FLT, 2, &voLimitsName, voDefaults), // Vorticity limits (min/max)
+
+    PRM_Template(PRM_STRING, 1, &sopStringName,  0, &sopStringMenu),
 	PRM_Template() // Sentinel
 };
 
@@ -173,33 +167,44 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
 {
 	fpreal	now = context.getTime();
 
-    bool currentCheckboxState = evalInt(generateName.getToken(), 0, now) != 0;
-	UT_String inputDir, outputDir;
-    evalString(inputDir, inputDirPathName.getToken(), 0, now);
-    evalString(outputDir, outputDirPathName.getToken(), 0, now);
-    inputDir+="/ParticleData_Fluid_#.bgeo";
-    outputDir+="/Foam_#.bgeo";
-	std::cout << inputDir.toStdString() << " " << outputDir.toStdString() << std::endl;
-	// Now that you have all the branches ,which is the start and end point of each point ,its time to render 
-	// these branches into Houdini 
-    float buoyancy = evalFloat(buoyancyName.getToken(), 0, now);
+    std::unordered_map<std::string, std::any> params;
 
-    // Assuming you have a drag parameter
-    float drag = evalFloat(dragName.getToken(), 0, now);
+    UT_String inputDirPath, outputDirPath;
+    evalString(inputDirPath, inputDirPathName.getToken(), 0, now);
+    evalString(outputDirPath, outputDirPathName.getToken(), 0, now);
+    params["inputDirPath"] = inputDirPath.toStdString();
+    params["outputDirPath"] = outputDirPath.toStdString();
 
-    // Fetch the foamScale value
-    int foamScale = evalInt(foamScaleName.getToken(), 0, now);
+    // Reading and storing toggle (boolean) parameter
+    params["generate"] = evalInt(generateName.getToken(), 0, now);
 
-    // Fetch the lifetime min and max values
-    float lifeMin = evalFloat(lifeMinName.getToken(), 0, now);
-    float lifeMax = evalFloat(lifeMaxName.getToken(), 0, now);
-    int startFrame = evalInt(startFrameName.getToken(), 0, now);
-    int endFrame = evalInt(endFrameName.getToken(), 0, now);
-    float radius = evalFloat(radiusName.getToken(), 0, now);
-    if (currentCheckboxState && !lastCheckboxState) {
-        runFoamGenerator(startFrame, endFrame, radius, foamScale, inputDir.toStdString(), outputDir.toStdString(),buoyancy,drag, lifeMin, lifeMax);
-    }
-    lastCheckboxState = currentCheckboxState;
+    // Reading and storing float parameters
+    params["radius"] = evalFloat(radiusName.getToken(), 0, now);
+    params["buoyancy"] = evalFloat(buoyancyName.getToken(), 0, now);
+    params["drag"] = evalFloat(dragName.getToken(), 0, now);
+    params["foamScale"] = evalFloat(foamScaleName.getToken(), 0, now);
+
+    // Reading and storing float parameters with limits (min/max)
+    params["lifeMin"] = evalFloat(lifeLimitsName.getToken(), 0, now);
+    params["lifeMax"] = evalFloat(lifeLimitsName.getToken(), 1, now);
+
+    params["startFrame"] = evalFloat(frameLimitsName.getToken(), 0, now);
+    params["endFrame"] = evalFloat(frameLimitsName.getToken(), 1, now);
+
+    // Reading and storing ORD parameters and their limits
+    params["taFactor"] = evalInt(taFactorName.getToken(), 0, now);
+    params["taMin"] = evalFloat(taLimitsName.getToken(), 0, now);
+    params["taMax"] = evalFloat(taLimitsName.getToken(), 1, now);
+
+    params["wcFactor"] = evalInt(wcFactorName.getToken(), 0, now);
+    params["wcMin"] = evalFloat(wcLimitsName.getToken(), 0, now);
+    params["wcMax"] = evalFloat(wcLimitsName.getToken(), 1, now);
+
+    params["voFactor"] = evalInt(voFactorName.getToken(), 0, now);
+    params["voMin"] = evalFloat(voLimitsName.getToken(), 0, now);
+    params["voMax"] = evalFloat(voLimitsName.getToken(), 1, now);
+    
+    runSimulationFromNode(params); 
 
 	// PUT YOUR CODE HERE
 	// Declare all the necessary variables for drawing cylinders for each branch 

@@ -36,7 +36,7 @@ newSopOperator(OP_OperatorTable *table)
 	sim->setNumOrderedInputs(1);
     table->addOperator(
 	    	sim// Flag it as generator
-	    );
+			);
 	auto fluid_sim = new OP_Operator("CusFluidSimulator",			// Internal name
 		"FluidSimulator",			// UI name
 		SOP_FUILDSIMULATOR::myConstructor,	// How to build the SOP
@@ -47,15 +47,15 @@ newSopOperator(OP_OperatorTable *table)
 		OP_FLAG_GENERATOR);
 	fluid_sim->setNumOrderedInputs(1);
 	table->addOperator(
-		fluid_sim// Flag it as generator
+			fluid_sim// Flag it as generator
 	);
 	table->addOperator(
 		new OP_Operator("CusFoamGenerator",			// Internal name
 			"FoamGenerator",			// UI name
 			SOP_FOAMGENERATOR::myConstructor,	// How to build the SOP
 			SOP_FOAMGENERATOR::myTemplateList,	// My parameters
-			0,				// Min # of sources
-			0,				// Max # of sources
+			1,				// Min # of sources
+			1,				// Max # of sources
 			SOP_FOAMGENERATOR::myVariables,	// Local variables
 			OP_FLAG_GENERATOR)		// Flag it as generator
 	);

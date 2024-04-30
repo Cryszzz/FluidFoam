@@ -21,7 +21,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Paths for Houdini and Partio libraries
-set(HOUDINI_INSTALL_PATH "E:/houdini/Houdini 20.0.625")
+set(HOUDINI_INSTALL_PATH "C:/Program Files/Side Effects Software/Houdini20.0.625")
 set(HOUDINI_LIB_PATH "${HOUDINI_INSTALL_PATH}/custom/houdini/dsolib")
 set(Partio_LIBRARIES "${CMAKE_SOURCE_DIR}/lib/partio.lib") 
 
@@ -73,9 +73,10 @@ set(SOURCE_FILES
     src/vec.cpp
     src/FluidSimulator.cpp
     src/FoamGeneratorNode.cpp
+    src/FoamGenerationMain.cpp
+    src/FoamKernel.cpp
     src/FluidConfiguration.cpp
     src/RigidBody.cpp
-    
 )
 
 set(HEADER_FILES
@@ -86,6 +87,8 @@ set(HEADER_FILES
     src/vec.h
     src/FluidSimulator.h
     src/FoamGeneratorNode.h
+    src/FoamGenerationMain.h
+    src/FoamKernel.h
     src/FluidConfiguration.h
     src/RigidBody.h
 )

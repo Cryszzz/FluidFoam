@@ -3,9 +3,6 @@
 
 //#include <GEO/GEO_Point.h>
 //
-#include <unordered_map>
-#include <string>
-#include <any>
 #include <SOP/SOP_Node.h>
 
 namespace HDK_Sample {
@@ -30,7 +27,7 @@ protected:
 
     /// Disable parameters according to other parameters.
     virtual unsigned		 disableParms();
-    std::unordered_map<std::string, std::any> params;
+
 
     /// cookMySop does the actual work of the SOP computing, in this
     /// case, a LSYSTEM
