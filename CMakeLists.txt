@@ -21,7 +21,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Paths for Houdini and Partio libraries
-set(HOUDINI_INSTALL_PATH "C:/Program Files/Side Effects Software/Houdini20.0.625")
+set(HOUDINI_INSTALL_PATH "E:/houdini/Houdini 20.0.625")
 set(HOUDINI_LIB_PATH "${HOUDINI_INSTALL_PATH}/custom/houdini/dsolib")
 # set(Partio_LIBRARIES "${CMAKE_SOURCE_DIR}/lib/partio.lib") 
 
