@@ -6,9 +6,6 @@
 #include <SOP/SOP_Node.h>
 #include "SPlisHSPlasH/Simulation.h"
 #include "SPlisHSPlasH/Utilities/SceneLoader.h"
-#include "Utilities/Logger.h"
-#include "Utilities/Timing.h"
-#include "Utilities/Counting.h"
 
 
 namespace HDK_Sample {
