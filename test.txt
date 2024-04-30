@@ -1,0 +1,2 @@
+Severity	Code	Description	Project	File	Line	Suppression State
+Error	LNK2005	"public: static unsigned int Utilities::Timing::m_stopCounter" (?m_stopCounter@Timing@Utilities@@2IA) already defined in FluidSimulator.obj	hPartioEmitter	C:\Users\cryst\Documents\Upenn\CIS6600\Final\Fluidnew\build\FoamGenerationMain.obj	1	

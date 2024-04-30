@@ -92,11 +92,11 @@ SOP_FOAMGENERATOR::myTemplateList[] = {
 
     PRM_Template(PRM_FLT, 2, &lifeLimitsName, lifeDefaults), // Lifetime limits (min/max)
     PRM_Template(PRM_FLT, 2, &frameLimitsName, frameDefaults), // Frame limits (start/end)
-    PRM_Template(PRM_ORD, 1, &taFactorName, &taFactorDefault), // Trapped air factor
+    PRM_Template(PRM_FLT, 1, &taFactorName, &taFactorDefault), // Trapped air factor
     PRM_Template(PRM_FLT, 2, &taLimitsName, taDefaults), // Trapped air limits (min/max)
-    PRM_Template(PRM_ORD, 1, &wcFactorName, &wcFactorDefault), // Wave crest factor
+    PRM_Template(PRM_FLT, 1, &wcFactorName, &wcFactorDefault), // Wave crest factor
     PRM_Template(PRM_FLT, 2, &wcLimitsName, wcDefaults), // Wave crest limits (min/max)
-    PRM_Template(PRM_ORD, 1, &voFactorName, &voFactorDefault), // Vorticity factor
+    PRM_Template(PRM_FLT, 1, &voFactorName, &voFactorDefault), // Vorticity factor
     PRM_Template(PRM_FLT, 2, &voLimitsName, voDefaults), // Vorticity limits (min/max)
 
     PRM_Template(PRM_STRING, 1, &sopStringName,  0, &sopStringMenu),
@@ -172,6 +172,7 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
     UT_String inputDirPath, outputDirPath;
     evalString(inputDirPath, inputDirPathName.getToken(), 0, now);
     evalString(outputDirPath, outputDirPathName.getToken(), 0, now);
+    
     params["inputDirPath"] = inputDirPath.toStdString();
     params["outputDirPath"] = outputDirPath.toStdString();
 
@@ -192,17 +193,18 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
     params["endFrame"] = evalFloat(frameLimitsName.getToken(), 1, now);
 
     // Reading and storing ORD parameters and their limits
-    params["taFactor"] = evalInt(taFactorName.getToken(), 0, now);
+    params["taFactor"] = evalFloat(taFactorName.getToken(), 0, now);
     params["taMin"] = evalFloat(taLimitsName.getToken(), 0, now);
     params["taMax"] = evalFloat(taLimitsName.getToken(), 1, now);
 
-    params["wcFactor"] = evalInt(wcFactorName.getToken(), 0, now);
+    params["wcFactor"] = evalFloat(wcFactorName.getToken(), 0, now);
     params["wcMin"] = evalFloat(wcLimitsName.getToken(), 0, now);
     params["wcMax"] = evalFloat(wcLimitsName.getToken(), 1, now);
 
-    params["voFactor"] = evalInt(voFactorName.getToken(), 0, now);
+    params["voFactor"] = evalFloat(voFactorName.getToken(), 0, now);
     params["voMin"] = evalFloat(voLimitsName.getToken(), 0, now);
     params["voMax"] = evalFloat(voLimitsName.getToken(), 1, now);
+    
     
     runSimulationFromNode(params); 
 

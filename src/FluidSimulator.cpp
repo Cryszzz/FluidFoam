@@ -11,7 +11,6 @@
 #include <OP/OP_AutoLockInputs.h>
 #include <OP/OP_Operator.h>
 
-
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -25,7 +24,9 @@ using namespace HDK_Sample;
 using namespace Utilities;
 namespace fs = std::filesystem;
 
-unsigned int Utilities::Timing::m_stopCounter = 0;
+INIT_COUNTING
+
+/*unsigned int Utilities::Timing::m_stopCounter = 0;
 unsigned int Utilities::Timing::m_startCounter = 0;
 bool Utilities::Timing::m_dontPrintTimes = false;
 std::stack<Utilities::TimingHelper> Utilities::Timing::m_timingStack;
@@ -34,7 +35,7 @@ int Utilities::IDFactory::id = 0;
 namespace Utilities {
 	Logger logger; // Definition of the static logger instance
 }
-std::unordered_map<std::string, AverageCount> Utilities::Counting::m_averageCounts;
+std::unordered_map<std::string, AverageCount> Utilities::Counting::m_averageCounts;*/
 
 //PUT YOUR CODE HERE
 //You need to declare your parameters here

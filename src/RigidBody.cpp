@@ -105,7 +105,7 @@ SOP_RIGIDBODY::cookMySop(OP_Context &context)
     UT_String rigidBodyFilePath;
     evalString(rigidBodyFilePath,inputPathName.getToken(), 0, now);
     bool isWall = evalInt(wallName.getToken(), 0, now) != 0;
-
+    std::cout << isWall << std::endl;
 	// PUT YOUR CODE HERE
 	// Declare all the necessary variables for drawing cylinders for each branch 
     float		 rad, tx, ty, tz;
