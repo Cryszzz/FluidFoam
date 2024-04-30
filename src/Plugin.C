@@ -54,7 +54,7 @@ newSopOperator(OP_OperatorTable *table)
 			"FoamGenerator",			// UI name
 			SOP_FOAMGENERATOR::myConstructor,	// How to build the SOP
 			SOP_FOAMGENERATOR::myTemplateList,	// My parameters
-			1,				// Min # of sources
+			0,				// Min # of sources
 			1,				// Max # of sources
 			SOP_FOAMGENERATOR::myVariables,	// Local variables
 			OP_FLAG_GENERATOR)		// Flag it as generator

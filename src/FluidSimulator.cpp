@@ -24,8 +24,6 @@ using namespace HDK_Sample;
 using namespace Utilities;
 namespace fs = std::filesystem;
 
-INIT_TIMING
-INIT_LOGGING
 INIT_COUNTING
 
 /*unsigned int Utilities::Timing::m_stopCounter = 0;

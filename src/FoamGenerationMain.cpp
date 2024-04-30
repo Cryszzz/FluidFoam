@@ -156,7 +156,7 @@ inline unsigned int getNeighbor(const unsigned int pointSetIndex, const unsigned
 }
 
 
-/*void runSimulationFromNode(const std::unordered_map<std::string, std::any>& params) {
+void runSimulationFromNode(const std::unordered_map<std::string, std::any>& params) {
     REPORT_MEMORY_LEAKS;
 
     Utilities::logger.addSink(std::make_shared<Utilities::ConsoleSink>(Utilities::LogLevel::INFO));
@@ -170,17 +170,32 @@ inline unsigned int getNeighbor(const unsigned int pointSetIndex, const unsigned
             return;
         }
 
+		particleRadius = std::any_cast<float>(params.at("radius"));
+		k_buoyancy = std::any_cast<float>(params.at("buoyancy"));
+		k_drag = std::any_cast<float>(params.at("drag"));
+		foam_scale = std::any_cast<float>(params.at("foamScale"));
+
+		lifetimeMin = std::any_cast<float>(params.at("lifeMin"));
+		lifetimeMax = std::any_cast<float>(params.at("lifeMax"));
+
+		startFrame = std::any_cast<float>(params.at("startFrame"));
+		endFrame = std::any_cast<float>(params.at("endFrame"));
+
+		k_ta = std::any_cast<float>(params.at("taFactor"));
+		taMin = std::any_cast<float>(params.at("taMin"));
+		taMax = std::any_cast<float>(params.at("taMax"));
+
+		k_wc = std::any_cast<float>(params.at("wcFactor"));
+		wcMin = std::any_cast<float>(params.at("wcMin"));
+		wcMax = std::any_cast<float>(params.at("wcMax"));
+
+		k_vo = std::any_cast<float>(params.at("voFactor"));
+		voMin = std::any_cast<float>(params.at("voMin"));
+		voMax = std::any_cast<float>(params.at("voMax"));
+
+		queryMode = false;
+		automaticMode = true;
         // Set variables as they would be set from the command line
-        bool queryMode = std::any_cast<bool>(params.at("query"));
-        bool automaticMode = !std::any_cast<bool>(params.at("no-auto"));
-        std::string input = std::any_cast<std::string>(params.at("input"));
-        std::string output = std::any_cast<std::string>(params.at("output"));
-        unsigned int startFrame = std::any_cast<unsigned int>(params.at("startframe"));
-        unsigned int endFrame = std::any_cast<unsigned int>(params.at("endframe"));
-        float particleRadius = std::any_cast<float>(params.at("radius"));
-        float timeStepSize = std::any_cast<float>(params.at("timestepsize"));
-        int kernelType = std::any_cast<int>(params.at("kernel"));
-        // Add additional parameter handling here...
 
         // Your existing logic that sets up and runs the simulation
         // For example:
@@ -191,7 +206,7 @@ inline unsigned int getNeighbor(const unsigned int pointSetIndex, const unsigned
     } catch (const std::exception& e) {
         std::cerr << "Error in simulation: " << e.what() << std::endl;
     }
-}*/
+}
 /*
 // main 
 int main( int argc, char **argv )
