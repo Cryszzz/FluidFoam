@@ -134,6 +134,13 @@ static PRM_Default inputPathDefault(0, "");
 static PRM_Name simulateButtonName("simulate", "Simulate");
 static PRM_Default simulateButtonNameDefault(0);
 
+// rigid body parameters
+static PRM_Name wallName("is_Wall", "Wall");
+static PRM_Default wallDefault = PRM_Default(false);
+static PRM_Name inputRigidObjPathName("Rigid_obj_path", "Rigidbody File Path");
+static PRM_Default inputRigidObjPathDefault(0, "");
+
+
 float getStringParamAsFloat(static PRM_Name &name) {
 	//OP_Parameters::evalFloat(names[0].getToken(), 0, t)
 	return 0.0;
@@ -147,36 +154,6 @@ float getStringParamAsFloat(static PRM_Name &name) {
 	fpreal	now = sop->lastCookTime;
 
 	
-	UT_Vector3 translation;
-	sop->evalFloats(translationName.getToken(), translation.data(), now);
-
-	UT_Vector3 rotationAxis;
-	sop->evalFloats(rotationAxisName.getToken(), rotationAxis.data(), now);
-
-	float rotationAngle = sop->evalFloat(rotationAngleName.getToken(), 0, now);
-
-	UT_Vector3 scale;
-	sop->evalFloats(scaleName.getToken(), scale.data(), now);
-
-	UT_Vector4 color;
-	sop->evalFloats(colorName.getToken(), color.data(), now); // Assuming RGBA
-
-
-	// Assuming "isDynamic", "isWall", "mapInvert" are toggles represented as booleans
-	bool isDynamic = sop->evalInt(isDynamicName.getToken(), 0, now) != 0;
-	bool isWall = sop->evalInt(isWallName.getToken(), 0, now) != 0;
-	bool mapInvert = sop->evalInt(mapInvertName.getToken(), 0, now) != 0;
-
-	// Assuming "denseMode" is an integer
-	int denseMode = sop->evalInt(denseModeName.getToken(), 0, now);
-
-	// "start", "end", "translationFB", and "scaleFB" are vectors
-	UT_Vector3 start, end, translationFB, scaleFB;
-	sop->evalFloats(startName.getToken(), start.data(), now);
-	sop->evalFloats(endName.getToken(), end.data(), now);
-	sop->evalFloats(translationFBName.getToken(), translationFB.data(), now);
-	sop->evalFloats(scaleFBName.getToken(), scaleFB.data(), now);
-
 	try
 	{
 		static unsigned int m_stopCounter;
@@ -464,6 +441,18 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	setString(inertiaInverse, CH_StringMeaning(), MaterialsName[10].getToken(), 0, t);
 	float inertiaInverseValue = evalFloat(MaterialsName[10].getToken(), 0, t);
 
+	// populate rigid body parameters
+	GA_ROHandleS wallHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
+	UT_String isWall = getParameters(wallHandle);
+	setString(isWall, CH_StringMeaning(), wallName.getToken(), 0, t);
+	float isWallValue = evalFloat(wallName.getToken(), 0, t);
+
+	GA_ROHandleS rigidObjPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
+	UT_String rigidObjPath = getParameters(rigidObjPathHandle);
+	setString(rigidObjPath, CH_StringMeaning(), inputRigidObjPathName.getToken(), 0, t);
+
+
+
 	// write to json file
 	fs::path jsonFilePath = fs::absolute("parameters.json");
 
@@ -497,27 +486,36 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	jsonStream << "    \"viscosity\": " << viscosity << ",\n";
 	jsonStream << "    \"viscosityMethod\": " << viscosityMethod << ",\n";
 	jsonStream << "    \"colorMapType\": " << 1 << "\n";
+	jsonStream << "	   \"viscoMaxIter\": " << viscoMaxIter << ",\n";
+	jsonStream << "    \"viscoMaxError\": " << viscoMaxError << ",\n";
+	jsonStream << "    \"viscoMaxIterOmega\": " << viscoMaxIterOmega << ",\n";
+	jsonStream << "    \"viscoMaxErrorOmega\": " << viscoMaxErrorOmega << ",\n";
+	jsonStream << "    \"viscosityBoundary\": " << viscosityBoundary << ",\n";
+	jsonStream << "    \"vorticityMethod\": " << vorticityMethod << ",\n";
+	jsonStream << "    \"vorticity\": " << vorticity << ",\n";
+	jsonStream << "    \"viscosityOmega\": " << viscosityOmega << ",\n";
+	jsonStream << "    \"inertiaInverse\": " << inertiaInverse << "\n";
 	jsonStream << "  }],\n";
 
 	// RigidBodies Section
 	jsonStream << "  \"RigidBodies\": [{\n";
-	jsonStream << "    \"geometryFile\": \"../models/UnitBox.obj\",\n";
-	jsonStream << "    \"translation\": [" << translation[0] << ", " << translation[1] << ", " << translation[2] << "],\n";
-	jsonStream << "    \"rotationAxis\": [" << rotationAxis[0] << ", " << rotationAxis[1] << ", " << rotationAxis[2] << "],\n";
-	jsonStream << "    \"scale\": [" << scale[0] << ", " << scale[1] << ", " << scale[2] << "],\n";
-	jsonStream << "    \"color\": [" << color[0] << ", " << color[1] << ", " << color[2] << ", " << color[3] << "],\n";
-	jsonStream << "    \"isDynamic\": " << (isDynamic ? "true" : "false") << ",\n";
+	jsonStream << "    \"geometryFile\": " << inputRigidObjPathName <<",\n";
+	jsonStream << "    \"translation\": [" << 0 << ", " << 0<< ", " << 0 << "],\n";
+	jsonStream << "    \"rotationAxis\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
+	jsonStream << "    \"scale\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
+	jsonStream << "    \"color\": [" << 0 << ", " << 0 << ", " << 0 << ", " << 1 << "],\n";
+	jsonStream << "    \"isDynamic\": " << "false" << ",\n";
 	jsonStream << "    \"isWall\": " << (isWall ? "true" : "false") << ",\n";
-	jsonStream << "    \"mapInvert\": " << (mapInvert ? "true" : "false") << "\n";
+	jsonStream << "    \"mapInvert\": " <<  "false" << "\n";
 	jsonStream << "  }],\n";
 
 	// FluidBlocks Section
-	jsonStream << "  \"FluidBlocks\": [{\n";
-	jsonStream << "    \"denseMode\": " << denseMode << ",\n";
-	jsonStream << "    \"start\": [" << start[0] << ", " << start[1] << ", " << start[2] << "],\n";
-	jsonStream << "    \"end\": [" << end[0] << ", " << end[1] << ", " << end[2] << "],\n";
-	jsonStream << "    \"translation\": [" << translationFB[0] << ", " << translationFB[1] << ", " << translationFB[2] << "],\n";
-	jsonStream << "    \"scale\": [" << scaleFB[0] << ", " << scaleFB[1] << ", " << scaleFB[2] << "]\n";
+	jsonStream << "  \"FluidModels\": [{\n";
+	jsonStream << "    \"particleFile\": \"../models/UnitBox.obj\",\n";
+	jsonStream << "    \"translation\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
+	jsonStream << "    \"rotationAxis\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
+	jsonStream << "    \"rotationAngle\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
+	jsonStream << "    \"scale\": [" << 1 << ", " << 1 << ", " << 1 << "]\n";
 	jsonStream << "  }]\n";
 	jsonStream << "}\n";
 
@@ -529,7 +527,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	}
 	else {
 		// Error handling
-		return error();
+		std::cout << "Error: Could not open file for writing." << std::endl;
 	}
 
 
