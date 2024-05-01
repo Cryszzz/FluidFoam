@@ -6,6 +6,8 @@
 #include <SOP/SOP_Node.h>
 #include "SPlisHSPlasH/Simulation.h"
 #include "SPlisHSPlasH/Utilities/SceneLoader.h"
+#include "Simulator/SimulatorBase.h"
+
 
 
 namespace HDK_Sample {
@@ -30,6 +32,7 @@ namespace HDK_Sample {
 
         std::unique_ptr<SPH::Simulation> mySim;
         std::unique_ptr<Utilities::SceneLoader> mySceneLoader;
+		std::unique_ptr<SPH::SimulatorBase> mySimulator;
 
         fpreal lastCookTime;
 
