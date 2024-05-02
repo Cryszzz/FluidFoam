@@ -264,14 +264,6 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
     if (error() < UT_ERROR_ABORT)
     {
 	boss = UTgetInterrupt();
-	if (divisions < 4)
-	{
-	    // With the range restriction we have on the divisions, this
-	    //	is actually impossible, but it shows how to add an error
-	    //	message or warning to the SOP.
-	    addWarning(SOP_MESSAGE, "Invalid divisions");
-	    divisions = 4;
-	}
 	gdp->clearAndDestroy();
 
 	// Start the interrupt server

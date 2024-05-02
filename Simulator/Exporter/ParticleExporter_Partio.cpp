@@ -26,6 +26,8 @@ void ParticleExporter_Partio::step(const unsigned int frame)
 	if (!m_active)
 		return;
 
+	//std::cout << "patio file path: " << m_exportPath << std::endl;
+
 	Simulation* sim = Simulation::getCurrent();
 	for (unsigned int i = 0; i < sim->numberOfFluidModels(); i++)
 	{

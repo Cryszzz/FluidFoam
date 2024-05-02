@@ -44,6 +44,9 @@ namespace HDK_Sample {
 		// a vector for frame, a vector for particles in each frame, a vector for Vector3r attributes in each particle
 		std::unique_ptr<std::vector<std::vector<std::vector<Vector3r>>>> my_particles;
 
+        // output patio file path as parameter in detail string
+        UT_String myOutputPath;
+
 
         fpreal lastCookTime;
 
