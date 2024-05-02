@@ -29,6 +29,14 @@ void RigidBodyExporter_VTK::step(const unsigned int frame)
 	writeRigidBodies(frame);
 }
 
+void RigidBodyExporter_VTK::myStep(const unsigned int frame)
+{
+	if (!m_active)
+		return;
+
+	writeRigidBodies(frame);
+}
+
 void RigidBodyExporter_VTK::reset()
 {
 	m_isFirstFrame = true;

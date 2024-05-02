@@ -28,11 +28,22 @@ namespace HDK_Sample {
         void populateParameters(fpreal t);
         UT_String getParameters(GA_ROHandleS paraHandle);
         static int simulateFluid(void* data, int index, float time, const PRM_Template* tplate);
+		void drawParticles(int frame, std::vector<std::vector<std::vector<Vector3r>>>& particles);
 
 
         std::unique_ptr<SPH::Simulation> mySim;
         std::unique_ptr<Utilities::SceneLoader> mySceneLoader;
 		std::unique_ptr<SPH::SimulatorBase> mySimulator;
+		
+        std::string mySceneFile;
+        std::unique_ptr<std::vector<Vector3r>> my_pos;
+        std::unique_ptr<std::vector<Vector3r>> my_vel;
+        std::unique_ptr<std::vector<Vector3r>> my_angVel;
+		// a vessel to store particle info in each frame
+		// usd unique_ptr to avoid memory leak
+		// a vector for frame, a vector for particles in each frame, a vector for Vector3r attributes in each particle
+		std::unique_ptr<std::vector<std::vector<std::vector<Vector3r>>>> my_particles;
+
 
         fpreal lastCookTime;
 

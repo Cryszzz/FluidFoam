@@ -196,40 +196,6 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 				
 				gdp->setPos3(ptoff, posH);
 				//std::cout << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-				//Create a sphere at each particle position
-
-
-
-
-
-				//// Assuming that m_velAttr is a valid velocity attribute from Partio
-				//if (m_velAttr.attributeIndex != -1) {
-				//	const float* vel = m_partioData->data<float>(m_velAttr, i);
-				//	// Set velocity attribute for the point
-				//	GA_RWHandleV3 velocityHandle(gdp->findAttribute(GA_ATTRIB_POINT, "v"));
-				//	if (!velocityHandle.isValid()) {
-				//		// Create the velocity attribute if it doesn't exist
-				//		std::cout << "velocity attribute not found" << std::endl;
-				//		//velocityHandle = GA_RWHandleV3(gdp->addFloatTuple(GA_ATTRIB_POINT, "v", 3));
-				//	}
-				//	velocityHandle.set(ptoff, UT_Vector3(vel[0], vel[1], vel[2]));
-				//	//std::cout << "vel: " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
-				//}
-
-				//// Assuming that m_idAttr is a valid ID attribute from Partio
-				//if (m_idAttr.attributeIndex != -1) {
-				//	const int* id = m_partioData->data<int>(m_idAttr, i);
-				//	// Set id attribute for the point
-				//	GA_RWHandleI idHandle(gdp->findAttribute(GA_ATTRIB_POINT, "id"));
-				//	if (!idHandle.isValid()) {
-				//		// Create the ID attribute if it doesn't exist
-				//		std:: cout << "id attribute not found" << std::endl;
-				//		//idHandle = GA_RWHandleI(gdp->addIntTuple(GA_ATTRIB_POINT, "id", 1));
-				//	}
-				//	idHandle.set(ptoff, *id);
-				//	//std::cout << "id: " << *id << std::endl;
-				//}
-				////const float* color = m_partioData->data<float>(m_userColorAttr, i);
 
 			}
 

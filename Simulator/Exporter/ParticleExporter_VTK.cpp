@@ -266,3 +266,32 @@ void ParticleExporter_VTK::writeParticles(const std::string& fileName, FluidMode
         m_outfile = nullptr;
 	}
 }
+
+void ParticleExporter_VTK::myStep(const unsigned int frame)
+{
+	if (!m_active)
+		return;
+
+	Simulation* sim = Simulation::getCurrent();
+	for (unsigned int i = 0; i < sim->numberOfFluidModels(); i++)
+	{
+		FluidModel* model = sim->getFluidModel(i);
+		std::string fileName = "ParticleData";
+		if (!m_base->getValue<bool>(SimulatorBase::EXPORT_OBJECT_SPLITTING))
+		{
+			fileName = fileName + "_" + model->getId() + "_" + std::to_string(frame);
+			std::string exportFileName = FileSystem::normalizePath(m_exportPath + "/" + fileName);
+			writeParticles(exportFileName + ".vtk", model);
+		}
+		else
+		{
+			// object splitting
+			for (auto j = 0u; j < m_base->getLastObjectId(); j++)
+			{
+				std::string fileName2 = fileName + "_" + model->getId() + "_" + std::to_string(j) + "_" + std::to_string(frame);
+				std::string exportFileName = FileSystem::normalizePath(m_exportPath + "/" + fileName2);
+				writeParticles(exportFileName + ".vtk", model, j);
+			}
+		}
+	}
+}

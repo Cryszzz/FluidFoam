@@ -235,6 +235,15 @@ namespace SPH
 		Vector3r getCameraPosition() const { return m_cameraPosition; }
 		Vector3r getCameraLookAt() const { return m_cameraLookAt; }
 
+
+		// New functions for Houdini authoring tool here
+		void setCommandLineParameter_pub();
+		void setCommandLineParameter_pub(GenParam::ParameterObject* paramObj);
+
+		bool myTimeStepNoGUI(int frameCounter, std::vector<std::vector<std::vector<Vector3r>>>& particles_in_frames); // get the position, velocity and angular velocity from this function
+		void myStep();
+
+
 #ifdef USE_EMBEDDED_PYTHON
 		ScriptObject* getScriptObject() { return m_scriptObject; }
 #endif 
