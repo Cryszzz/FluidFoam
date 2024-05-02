@@ -608,6 +608,7 @@ void SimulatorBase::runSimulation()
 
 		while (true)
 		{
+			//std::cout << "start time step\n";
 			if (!timeStepNoGUI())
 				break;
 		}
@@ -947,6 +948,7 @@ void SimulatorBase::timeStep()
 bool SimulatorBase::timeStepNoGUI()
 {
 	const Real stopAt = getValue<Real>(SimulatorBase::STOP_AT);
+	//std::cout << "Time: " << TimeManager::getCurrent()->getTime() << std::endl;
 	if ((stopAt > 0.0) && (stopAt < TimeManager::getCurrent()->getTime()))
 		return false;
 
@@ -1573,6 +1575,7 @@ void SimulatorBase::step()
 
 		for (size_t i = 0; i < m_particleExporters.size(); i++)
 		{
+			//std::cout << "Exporter: " << m_particleExporters[i].m_name << "\n";
 			m_particleExporters[i].m_exporter->step(m_frameCounter);
 		}
 		for (size_t i = 0; i < m_rbExporters.size(); i++)
@@ -3026,6 +3029,7 @@ bool SimulatorBase::myTimeStepNoGUI(int frameCounter, std::vector<std::vector<st
 			//std::cout << "particle #" << i << " position: " << model->getPosition(i) << std::endl;
 			particles.push_back(model->getVelocity(i)); // velocity
 			particles.push_back(model->getAcceleration(i)); // acceleration
+			std::cout << "particle # position:" << particles[0] << std::endl;
 			frame.push_back(particles);
 		}
 		

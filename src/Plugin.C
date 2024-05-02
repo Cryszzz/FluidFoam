@@ -40,6 +40,7 @@ newSopOperator(OP_OperatorTable *table)
     table->addOperator(
 	    	sim// Flag it as generator
 			);
+
 	auto fluid_sim = new OP_Operator("CusFluidSimulator",			// Internal name
 		"FluidSimulator",			// UI name
 		SOP_FUILDSIMULATOR::myConstructor,	// How to build the SOP
@@ -52,6 +53,7 @@ newSopOperator(OP_OperatorTable *table)
 	table->addOperator(
 			fluid_sim// Flag it as generator
 	);
+
 	table->addOperator(
 		new OP_Operator("CusFoamGenerator",			// Internal name
 			"FoamGenerator",			// UI name
@@ -62,6 +64,7 @@ newSopOperator(OP_OperatorTable *table)
 			SOP_FOAMGENERATOR::myVariables,	// Local variables
 			OP_FLAG_GENERATOR)		// Flag it as generator
 	);
+
 	table->addOperator(
 		new OP_Operator("CusFluidConfiguration",			// Internal name
 			"FluidConfiguration",			// UI name
@@ -72,6 +75,7 @@ newSopOperator(OP_OperatorTable *table)
 			SOP_FLUIDCONFIGURATION::myVariables,	// Local variables
 			OP_FLAG_GENERATOR)		// Flag it as generator
 	);
+
 	table->addOperator(
 		new OP_Operator("CusRigidBody",			// Internal name
 			"RigidBody",			// UI name
@@ -82,13 +86,14 @@ newSopOperator(OP_OperatorTable *table)
 			SOP_RIGIDBODY::myVariables,	// Local variables
 			OP_FLAG_GENERATOR)		// Flag it as generator
 	);
+
 	table->addOperator(
 		new OP_Operator("CusVisualizer",			// Internal name
 			"MyVisualizer",			// UI name
 			SOP_VISUALIZER::myConstructor,	// How to build the SOP
 			SOP_VISUALIZER::myTemplateList,	// My parameters
-			0,				// Min # of sources
-			10,				// Max # of sources
+			1,				// Min # of sources
+			1,				// Max # of sources
 			SOP_VISUALIZER::myVariables,	// Local variables
 			OP_FLAG_GENERATOR)		// Flag it as generator
 	);

@@ -87,8 +87,7 @@ void myRunSimulation(SPH::SimulatorBase& obj, std::vector<std::vector<std::vecto
 
 	while (true)
 	{
-		
-		
+			
 		if (!obj.myTimeStepNoGUI(frameCounter, my_particles))
 			break;
 
@@ -101,6 +100,7 @@ void myRunSimulation(SPH::SimulatorBase& obj, std::vector<std::vector<std::vecto
 void fluid_printCurrentPath() {
 	std::cout << "Current Path: " << fs::current_path() << std::endl;
 }
+
 static PRM_Name tabName("fluid");
 static PRM_Default  tabList[] = {
 	PRM_Default(19, "configuration"),        // 1 is number of parameters in tab
@@ -179,6 +179,9 @@ static PRM_Default jsonUpdateDefault(0);
 static PRM_Name inputPathName("Fluid_obj_path", "Fluid File Path");
 static PRM_Default inputPathDefault(0, "");
 
+static PRM_Name cacheFluidPathName("cacheFluidPath", "Cache Fluid Path");
+static PRM_Default cacheFluidPathDefault(0, "$HIP");
+
 
 // simulate button parameters
 static PRM_Name simulateButtonName("simulate", "Simulate");
@@ -189,6 +192,8 @@ static PRM_Name wallName("is_Wall", "Wall");
 static PRM_Default wallDefault = PRM_Default(false);
 static PRM_Name inputRigidObjPathName("Rigid_obj_path", "Rigidbody File Path");
 static PRM_Default inputRigidObjPathDefault(0, "");
+
+// output path parameters
 
 
 float getStringParamAsFloat(static PRM_Name &name) {
@@ -226,7 +231,7 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 		static unsigned int m_stopCounter;
 		std::cout << "Simulator initializing ..." << std::endl;
 
-		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", "", false, false, 0.2f, "");
+		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, 10.f, "");
 		sop->mySimulator->initSimulation(); // this line is working good
 		// need to divide runSimulation() so I can have the attributes of the particles not in patio format
 		// checked the runSimulation() function in SimulatorBase.cpp and all necessary member functions are not private
@@ -236,7 +241,11 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 			return 0;
 		}
 
-		myRunSimulation(*sop->mySimulator, *sop->my_particles);
+		//myRunSimulation(*sop->mySimulator, *sop->my_particles);
+		// activate patio exporter
+		//std::string patioExporterName = sop->mySimulator->getParticleExporters;
+		sop->mySimulator->activateExporter("Partio Exporter", true);
+		sop->mySimulator->runSimulation();
 
 		sop->mySimulator->cleanup();
 
@@ -263,6 +272,7 @@ SOP_FUILDSIMULATOR::myTemplateList[] = {
 		PRM_Template(PRM_CALLBACK, 1, &simulateButtonName, &simulateButtonNameDefault, nullptr, nullptr, &simulateFluid, nullptr),
 		PRM_Template(PRM_TOGGLE, 1, &jsonUpdateName, &jsonUpdateDefault),
 		//PRM_Template(PRM_SWITCHER, 5, &tabName, tabList),
+		PRM_Template(PRM_STRING, 1, &cacheFluidPathName, &cacheFluidPathDefault),
 
 
 		PRM_Template() // Sentinel
@@ -324,6 +334,8 @@ SOP_FUILDSIMULATOR::SOP_FUILDSIMULATOR(OP_Network* net, const char* name, OP_Ope
 	my_vel = std::make_unique<std::vector<Vector3r>>();
 	my_angVel = std::make_unique<std::vector<Vector3r>>();
 	my_particles = std::make_unique<std::vector<std::vector<std::vector<Vector3r>>>>();
+	fs::path patio_path = fs::absolute("patrio_output/");
+	myOutputPath = patio_path.string();
 }
 
 SOP_FUILDSIMULATOR::~SOP_FUILDSIMULATOR() {}
@@ -359,12 +371,13 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	std::cout << "Populating parameters..." << std::endl;
 
 	// set inputPathName
-	GA_ROHandleS inputPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Fluid_obj_path"));
+	GA_RWHandleS inputPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Fluid_obj_path"));
 	UT_String inputPath = getParameters(inputPathHandle);
 	setString(inputPath, CH_StringMeaning(), inputPathName.getToken(), 0, t);
+	inputPathHandle.set(GA_Offset(0), inputPath);
 
 
-	GA_ROHandleS particleRadiusHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "particleRadius"));
+	GA_RWHandleS particleRadiusHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "particleRadius"));
 	UT_String particleRadius = getParameters(particleRadiusHandle);
 	std::cout << "Attribute set to: " << particleRadius.toStdString() << std::endl;
 	std::cout << "getToken value is:" << ConfigurationNames[1].getToken() << std::endl;
@@ -373,17 +386,17 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	float particleRadiusValue = evalFloat(ConfigurationNames[1].getToken(), 0, t);
 
 	// populating configuration parameters
-	GA_ROHandleS timeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "timeStepSize"));
+	GA_RWHandleS timeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "timeStepSize"));
 	UT_String timeStepSize = getParameters(timeStepSizeHandle);
 	setString(timeStepSize, CH_StringMeaning(), ConfigurationNames[0].getToken(), 0, t);
 	float timeStepSizeValue = evalFloat(ConfigurationNames[0].getToken(), 0, t);
 
-	GA_ROHandleS enableZSortHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "enableZSort"));
+	GA_RWHandleS enableZSortHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "enableZSort"));
 	UT_String enableZSort = getParameters(enableZSortHandle);
 	setString(enableZSort, CH_StringMeaning(), ConfigurationNames[2].getToken(), 0, t);
 	float enableZSortValue = evalFloat(ConfigurationNames[2].getToken(), 0, t);
 
-	GA_ROHandleS gravitationHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "gravitation"));
+	GA_RWHandleS gravitationHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "gravitation"));
 	UT_String gravitation = getParameters(gravitationHandle);
 	setString(gravitation, CH_StringMeaning(), ConfigurationNames[3].getToken(), 0, t);
 	// Tokenize the string based on the comma delimiter
@@ -396,119 +409,128 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	// Create a UT_Vector3
 	UT_Vector3 gravitationValue(x, y, z);
 
-	GA_ROHandleS maxIterationsHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxIterations"));
+	GA_RWHandleS maxIterationsHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxIterations"));
 	UT_String maxIterations = getParameters(maxIterationsHandle);
 	setString(maxIterations, CH_StringMeaning(), ConfigurationNames[4].getToken(), 0, t);
 	float maxIterationsValue = evalFloat(ConfigurationNames[4].getToken(), 0, t);
 
 
-	GA_ROHandleS maxErrorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxError"));
+	GA_RWHandleS maxErrorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxError"));
 	UT_String maxError = getParameters(maxErrorHandle);
 	setString(maxError, CH_StringMeaning(), ConfigurationNames[5].getToken(), 0, t);
 	float maxErrorValue = evalFloat(ConfigurationNames[5].getToken(), 0, t);
 
-	GA_ROHandleS enableDivergenceSolverHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "enableDivergenceSolver"));
+	GA_RWHandleS enableDivergenceSolverHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "enableDivergenceSolver"));
 	UT_String enableDivergenceSolver = getParameters(enableDivergenceSolverHandle);
 	setString(enableDivergenceSolver, CH_StringMeaning(), ConfigurationNames[6].getToken(), 0, t);
 	float enableDivergenceSolverValue = evalFloat(ConfigurationNames[6].getToken(), 0, t);
 
-	GA_ROHandleS maxIterationsVHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxIterationsV"));
+	GA_RWHandleS maxIterationsVHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxIterationsV"));
 	UT_String maxIterationsV = getParameters(maxIterationsVHandle);
 	setString(maxIterationsV, CH_StringMeaning(), ConfigurationNames[7].getToken(), 0, t);
 	float maxIterationsVValue = evalFloat(ConfigurationNames[7].getToken(), 0, t);
 
-	GA_ROHandleS maxErrorVHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxErrorV"));
+	GA_RWHandleS maxErrorVHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "maxErrorV"));
 	UT_String maxErrorV = getParameters(maxErrorVHandle);
 	setString(maxErrorV, CH_StringMeaning(), ConfigurationNames[8].getToken(), 0, t);
 	float maxErrorVValue = evalFloat(ConfigurationNames[8].getToken(), 0, t);
 
-	GA_ROHandleS cflMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMethod"));
+	GA_RWHandleS cflMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMethod"));
 	UT_String cflMethod = getParameters(cflMethodHandle);
 	setString(cflMethod, CH_StringMeaning(), ConfigurationNames[9].getToken(), 0, t);
 	float cflMethodValue = evalFloat(ConfigurationNames[9].getToken(), 0, t);
 
-	GA_ROHandleS cflFactorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflFactor"));
+	GA_RWHandleS cflFactorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflFactor"));
 	UT_String cflFactor = getParameters(cflFactorHandle);
 	setString(cflFactor, CH_StringMeaning(), ConfigurationNames[10].getToken(), 0, t);
 	float cflFactorValue = evalFloat(ConfigurationNames[10].getToken(), 0, t);
 
-	GA_ROHandleS cflMaxTimeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMaxTimeStepSize"));
+	GA_RWHandleS cflMaxTimeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMaxTimeStepSize"));
 	UT_String cflMaxTimeStepSize = getParameters(cflMaxTimeStepSizeHandle);
 	setString(cflMaxTimeStepSize, CH_StringMeaning(), ConfigurationNames[11].getToken(), 0, t);
 	float cflMaxTimeStepSizeValue = evalFloat(ConfigurationNames[11].getToken(), 0, t);
 
-	GA_ROHandleS cflMinTimeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMinTimeStepSize"));
+	GA_RWHandleS cflMinTimeStepSizeHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "cflMinTimeStepSize"));
 	UT_String cflMinTimeStepSize = getParameters(cflMinTimeStepSizeHandle);
 	setString(cflMinTimeStepSize, CH_StringMeaning(), ConfigurationNames[12].getToken(), 0, t);
 	float cflMinTimeStepSizeValue = evalFloat(ConfigurationNames[12].getToken(), 0, t);
 
 	// populating materials parameters
-	GA_ROHandleS viscosityMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityMethod"));
+	GA_RWHandleS viscosityMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityMethod"));
 	UT_String viscosityMethod = getParameters(viscosityMethodHandle);
 	setString(viscosityMethod, CH_StringMeaning(), MaterialsName[0].getToken(), 0, t);
 	float viscosityMethodValue = evalFloat(MaterialsName[0].getToken(), 0, t);
 
-	GA_ROHandleS viscosityHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosity"));
+	GA_RWHandleS viscosityHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosity"));
 	UT_String viscosity = getParameters(viscosityHandle);
 	setString(viscosity, CH_StringMeaning(), MaterialsName[1].getToken(), 0, t);
 	float viscosityValue = evalFloat(MaterialsName[1].getToken(), 0, t);
 
-	GA_ROHandleS viscoMaxIterHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxIter"));
+	GA_RWHandleS viscoMaxIterHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxIter"));
 	UT_String viscoMaxIter = getParameters(viscoMaxIterHandle);
 	setString(viscoMaxIter, CH_StringMeaning(), MaterialsName[2].getToken(), 0, t);
 	float viscoMaxIterValue = evalFloat(MaterialsName[2].getToken(), 0, t);
 
-	GA_ROHandleS viscoMaxErrorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxError"));
+	GA_RWHandleS viscoMaxErrorHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxError"));
 	UT_String viscoMaxError = getParameters(viscoMaxErrorHandle);
 	setString(viscoMaxError, CH_StringMeaning(), MaterialsName[3].getToken(), 0, t);
 	float viscoMaxErrorValue = evalFloat(MaterialsName[3].getToken(), 0, t);
 
-	GA_ROHandleS viscoMaxIterOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxIterOmega"));
+	GA_RWHandleS viscoMaxIterOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxIterOmega"));
 	UT_String viscoMaxIterOmega = getParameters(viscoMaxIterOmegaHandle);
 	setString(viscoMaxIterOmega, CH_StringMeaning(), MaterialsName[4].getToken(), 0, t);
 	float viscoMaxIterOmegaValue = evalFloat(MaterialsName[4].getToken(), 0, t);
 
-	GA_ROHandleS viscoMaxErrorOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxErrorOmega"));
+	GA_RWHandleS viscoMaxErrorOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscoMaxErrorOmega"));
 	UT_String viscoMaxErrorOmega = getParameters(viscoMaxErrorOmegaHandle);
 	setString(viscoMaxErrorOmega, CH_StringMeaning(), MaterialsName[5].getToken(), 0, t);
 	float viscoMaxErrorOmegaValue = evalFloat(MaterialsName[5].getToken(), 0, t);
 
-	GA_ROHandleS viscosityBoundaryHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityBoundary"));
+	GA_RWHandleS viscosityBoundaryHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityBoundary"));
 	UT_String viscosityBoundary = getParameters(viscosityBoundaryHandle);
 	setString(viscosityBoundary, CH_StringMeaning(), MaterialsName[6].getToken(), 0, t);
 	float viscosityBoundaryValue = evalFloat(MaterialsName[6].getToken(), 0, t);
 
-	GA_ROHandleS vorticityMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "vorticityMethod"));
+	GA_RWHandleS vorticityMethodHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "vorticityMethod"));
 	UT_String vorticityMethod = getParameters(vorticityMethodHandle);
 	setString(vorticityMethod, CH_StringMeaning(), MaterialsName[7].getToken(), 0, t);
 	float vorticityMethodValue = evalFloat(MaterialsName[7].getToken(), 0, t);
 
-	GA_ROHandleS vorticityHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "vorticity"));
+	GA_RWHandleS vorticityHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "vorticity"));
 	UT_String vorticity = getParameters(vorticityHandle);
 	setString(vorticity, CH_StringMeaning(), MaterialsName[8].getToken(), 0, t);
 	float vorticityValue = evalFloat(MaterialsName[8].getToken(), 0, t);
 
-	GA_ROHandleS viscosityOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityOmega"));
+	GA_RWHandleS viscosityOmegaHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "viscosityOmega"));
 	UT_String viscosityOmega = getParameters(viscosityOmegaHandle);
 	setString(viscosityOmega, CH_StringMeaning(), MaterialsName[9].getToken(), 0, t);
 	float viscosityOmegaValue = evalFloat(MaterialsName[9].getToken(), 0, t);
 
-	GA_ROHandleS inertiaInverseHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "inertiaInverse"));
+	GA_RWHandleS inertiaInverseHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "inertiaInverse"));
 	UT_String inertiaInverse = getParameters(inertiaInverseHandle);
 	setString(inertiaInverse, CH_StringMeaning(), MaterialsName[10].getToken(), 0, t);
 	float inertiaInverseValue = evalFloat(MaterialsName[10].getToken(), 0, t);
 
 	// populate rigid body parameters
-	GA_ROHandleS wallHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
+	GA_RWHandleS wallHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
 	UT_String isWall = getParameters(wallHandle);
 	setString(isWall, CH_StringMeaning(), wallName.getToken(), 0, t);
 	float isWallValue = evalFloat(wallName.getToken(), 0, t);
 
-	GA_ROHandleS rigidObjPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
+	GA_RWHandleS rigidObjPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
 	UT_String rigidObjPath = getParameters(rigidObjPathHandle);
 	setString(rigidObjPath, CH_StringMeaning(), inputRigidObjPathName.getToken(), 0, t);
 	
+	
+	// Handle to manage the file path attribute
+	GA_RWHandleS file_path_handle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+	if (!file_path_handle.isValid()) {
+		file_path_handle = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
+	}
 
+	if (file_path_handle.isValid()) {
+		file_path_handle.set(GA_Offset(0), myOutputPath);
+	}
 
 
 	// write to json file
@@ -600,7 +622,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 		jsonStream << "    \"translation\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
 		jsonStream << "    \"rotationAxis\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
 		jsonStream << "    \"rotationAngle\": " << 0 <<  ",\n";
-		jsonStream << "    \"scale\": [" << 1 << ", " << 1 << ", " << 1 << "]\n";
+		jsonStream << "    \"scale\": [" << 0.5 << ", " << 0.5 << ", " << 0.5 << "]\n";
 		jsonStream << "  }]\n";
 		jsonStream << "}\n";
 	}
@@ -677,7 +699,7 @@ SOP_FUILDSIMULATOR::cookMySop(OP_Context& context)
 			if (!my_particles->empty()) {
 				// draw particles
 				std::cout << "Drawing particles on cook on frame: " << frame << std::endl;
-				drawParticles(frame, *my_particles);
+				//drawParticles(frame, *my_particles);
 			}
 			
 

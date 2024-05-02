@@ -32,9 +32,9 @@ static PRM_Name maxVal("maxVal", "Max Value");
 static PRM_Name frameIndex("frameIndex", "Frame Index");
 
 // Declare parameters' default value for the SOP
-static PRM_Default partioFileDefault(0.0, "D:/PennCGGT/CIS6600/autoringTool/outputs/partio/ParticleData_Fluid");
-static PRM_Default colorAttrNameDefault(0.0, "velocity");
-static PRM_Default rotationAttrNameDefault(0.0, "v");
+static PRM_Default partioFileDefault(0.0, "");
+static PRM_Default colorAttrNameDefault(0.0, "");
+static PRM_Default rotationAttrNameDefault(0.0, "");
 static PRM_Default minValDefault(0.0);
 static PRM_Default maxValDefault(1.0);
 static PRM_Default frameIndexDefault(1.0);
@@ -118,6 +118,25 @@ SOP_VISUALIZER::disableParms()
 	return changes;
 }
 
+// get parameter from the handle
+UT_String SOP_VISUALIZER::getParameters(GA_ROHandleS paraHandle) {
+	// get parameters from the input from last ndoe
+	if (paraHandle.isValid()) {
+		UT_String value;
+		value = paraHandle.get(GA_Offset(0));
+		if (value) {
+			std::cout << "Retrieved attribute value: " << value.toStdString() << std::endl;
+			return value;
+		}
+		else {
+			std::cout << "Failed to get attribute value." << std::endl;
+		}
+	}
+	else {
+		std::cout << "Attribute handle is not valid." << std::endl;
+	}
+}
+
 OP_ERROR
 SOP_VISUALIZER::cookMySop(OP_Context& context)
 {
@@ -132,40 +151,7 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 	// Get the frame index from the parameter
 	int frameIndex = currentFrame;
 
-	// Get the file path from the parameter
-	UT_String baseFilePath;
-	evalString(baseFilePath, "partioFile", 0, now);
-
-	// Construct the dynamic file path using current frame
-	UT_String partioFilePath;
-	partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.toStdString().c_str(), frameIndex);
-
-	std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
-	// Get the color attribute name from the parameter
-	UT_String colorAttrName;
-	evalString(colorAttrName, "colorAttrName", 0, now);
-
-	// Get the rotation attribute name from the parameter
-	UT_String rotationAttrName;
-	evalString(rotationAttrName, "rotationAttrName", 0, now);
-
-	// Get the min value from the parameter
-	float minVal;
-	minVal = MINVAL(now);
-
-	// Get the max value from the parameter
-	float maxVal;
-	maxVal = MAXVAL(now);
-
-	m_partioData = Partio::create();
 	
-	myLastPartioFilePath = partioFilePath;
-	if (!readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
-	{
-		addError(SOP_ERR_INVALID_SRC, "Failed to read partio file");
-		return error();
-
-	}
 
 	// Check to see that there hasn't been a critical error in cooking the SOP.
 	if (error() < UT_ERROR_ABORT)
@@ -179,6 +165,58 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 		// Start the interrupt server
 		if (boss->opStart("Building"))
 		{
+			// Get the file path from the parameter
+			UT_String baseFilePath;
+			evalString(baseFilePath, "partioFile", 0, now);
+
+			// get the patio file path from the detail list
+			UT_String PATIO_FILE_PATH;
+			GA_ROHandleS file_path_handle(gdp->findAttribute(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+			if (file_path_handle.isValid()) {
+				UT_StringHolder value = file_path_handle.get(GA_Offset(0));
+				std::cout << "File path: " << value.toStdString() << std::endl;
+			}
+			else {
+				file_path_handle = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
+			}
+			if (file_path_handle.isValid()) {
+				//file_path_handle.set(GA_Offset(0), "myOutputPath");
+			}
+			//std::cout << "Base file path: " << PATIO_FILE_PATH.toStdString() << std::endl;
+
+
+			// Construct the dynamic file path using current frame
+			// check if the file exists
+			UT_String partioFilePath;
+			partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.toStdString().c_str(), frameIndex);
+
+			std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
+			// Get the color attribute name from the parameter
+			UT_String colorAttrName;
+			evalString(colorAttrName, "colorAttrName", 0, now);
+
+			// Get the rotation attribute name from the parameter
+			UT_String rotationAttrName;
+			evalString(rotationAttrName, "rotationAttrName", 0, now);
+
+			// Get the min value from the parameter
+			float minVal;
+			minVal = MINVAL(now);
+
+			// Get the max value from the parameter
+			float maxVal;
+			maxVal = MAXVAL(now);
+
+			m_partioData = Partio::create();
+
+			myLastPartioFilePath = partioFilePath;
+			if (!readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
+			{
+				addError(SOP_ERR_INVALID_SRC, "Failed to read partio file");
+				return error();
+
+			}
+			
 			float sphereRadius = 0.1f;
 			// Create a sphere for each particle
 			////// render the particles using the partio data and houdini particles attributes //////
