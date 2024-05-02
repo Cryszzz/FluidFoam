@@ -272,7 +272,7 @@ SOP_FUILDSIMULATOR::myTemplateList[] = {
 		PRM_Template(PRM_CALLBACK, 1, &simulateButtonName, &simulateButtonNameDefault, nullptr, nullptr, &simulateFluid, nullptr),
 		PRM_Template(PRM_TOGGLE, 1, &jsonUpdateName, &jsonUpdateDefault),
 		//PRM_Template(PRM_SWITCHER, 5, &tabName, tabList),
-		PRM_Template(PRM_STRING, 1, &cacheFluidPathName, &cacheFluidPathDefault),
+		PRM_Template(PRM_FILE, 1, &cacheFluidPathName, &cacheFluidPathDefault),
 
 
 		PRM_Template() // Sentinel
@@ -523,14 +523,25 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	
 	
 	// Handle to manage the file path attribute
-	GA_RWHandleS file_path_handle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
-	if (!file_path_handle.isValid()) {
-		file_path_handle = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
-	}
+	evalString(myOutputPath, cacheFluidPathName.getToken(), 0, t);
+	//GA_RWHandleS file_path_handle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+	//if (!file_path_handle.isValid()) {
+	//	file_path_handle = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
+	//}
 
-	if (file_path_handle.isValid()) {
-		file_path_handle.set(GA_Offset(0), myOutputPath);
+	//if (file_path_handle.isValid()) {
+	//	file_path_handle.set(GA_Offset(0), myOutputPath);
+	//}
+
+	UT_String paramName(inputPathName.getToken());
+	GA_RWHandleS attrib(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+	if (!attrib.isValid()) {
+		attrib = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
 	}
+	std::string paramValue = myOutputPath.toStdString();
+	UT_String outValue(paramValue.c_str());
+	attrib.set(GA_Offset(0), outValue);
+	attrib.bumpDataId();
 
 
 	// write to json file
@@ -650,12 +661,6 @@ SOP_FUILDSIMULATOR::cookMySop(OP_Context& context)
 {
 	fpreal	now = context.getTime();
 	lastCookTime = now;
-	//mySimulator = std::unique_ptr<SPH::SimulatorBase>(new SPH::SimulatorBase());
-
-
-	// Add gravitation as an array
-	fs::path jsonFilePath = fs::absolute("parameters.json");
-
 
 	UT_Interrupt* boss;
 

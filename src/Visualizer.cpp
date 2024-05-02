@@ -9,6 +9,7 @@
 #include <CH/CH_LocalVariable.h>
 #include <PRM/PRM_Include.h>
 #include <PRM/PRM_SpareData.h>
+#include <OP/OP_AutoLockInputs.h>
 #include <UT/UT_Map.h>
 #include <GU/GU_Detail.h>
 #include <fstream>
@@ -162,6 +163,15 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 
 		gdp->clearAndDestroy();
 
+		OP_AutoLockInputs inputs(this);
+		if (inputs.lock(context) >= UT_ERROR_ABORT)
+			return error();
+
+		// Duplicate our incoming geometry with the hint that we only
+		// altered points.  Thus, if our input was unchanged, we can
+	// easily roll back our changes by copying point values.
+		duplicatePointSource(0, context);
+
 		// Start the interrupt server
 		if (boss->opStart("Building"))
 		{
@@ -170,19 +180,10 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			evalString(baseFilePath, "partioFile", 0, now);
 
 			// get the patio file path from the detail list
-			UT_String PATIO_FILE_PATH;
-			GA_ROHandleS file_path_handle(gdp->findAttribute(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
-			if (file_path_handle.isValid()) {
-				UT_StringHolder value = file_path_handle.get(GA_Offset(0));
-				std::cout << "File path: " << value.toStdString() << std::endl;
-			}
-			else {
-				file_path_handle = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
-			}
-			if (file_path_handle.isValid()) {
-				//file_path_handle.set(GA_Offset(0), "myOutputPath");
-			}
-			//std::cout << "Base file path: " << PATIO_FILE_PATH.toStdString() << std::endl;
+			GA_RWHandleS inputPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+			UT_String inputPath = getParameters(inputPathHandle);
+			///setString(inputPath, CH_StringMeaning(), inputPathName.getToken(), 0, now);
+			inputPathHandle.set(GA_Offset(0), inputPath);
 
 
 			// Construct the dynamic file path using current frame
@@ -210,32 +211,29 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			m_partioData = Partio::create();
 
 			myLastPartioFilePath = partioFilePath;
-			if (!readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
+			if (readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
 			{
-				addError(SOP_ERR_INVALID_SRC, "Failed to read partio file");
-				return error();
+				// Create a sphere for each particle
+				////// render the particles using the partio data and houdini particles attributes //////
+				unsigned int numParticles = m_partioData->numParticles();
+				std::cout << "Number of particles: " << numParticles << std::endl;
+				//UTdebugFormat("Number of attributes: {}", m_partioData->numAttributes());
+				for (unsigned int i = 0; i < numParticles; i++) {
+					UT_Vector3 posH;
+					if (m_posAttr.attributeIndex != 0xffffffff) {
+						const float* pos = m_partioData->data<float>(m_posAttr, i);   // This line is causing the error
+						posH = UT_Vector3(pos[0], pos[1], pos[2]);
+					}
 
+					GA_Offset ptoff = gdp->appendPointOffset();
+
+					gdp->setPos3(ptoff, posH);
+					//std::cout << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+
+				}
 			}
 			
-			float sphereRadius = 0.1f;
-			// Create a sphere for each particle
-			////// render the particles using the partio data and houdini particles attributes //////
-			unsigned int numParticles = m_partioData->numParticles();
-			std::cout << "Number of particles: " << numParticles << std::endl;
-			//UTdebugFormat("Number of attributes: {}", m_partioData->numAttributes());
-			for (unsigned int i = 0; i < numParticles; i++) {
-				UT_Vector3 posH;
-				if (m_posAttr.attributeIndex != 0xffffffff) {
-					const float* pos = m_partioData->data<float>(m_posAttr, i);   // This line is causing the error
-					posH = UT_Vector3(pos[0], pos[1], pos[2]);
-				}
-
-				GA_Offset ptoff = gdp->appendPointOffset();
-				
-				gdp->setPos3(ptoff, posH);
-				//std::cout << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-
-			}
+			
 
 
 			////////////////////////////////////////////////////////////////////////////////////////////
