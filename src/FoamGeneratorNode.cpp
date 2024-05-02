@@ -12,7 +12,6 @@
 #include <iostream>
 #include <filesystem>
 #include "FoamGeneratorNode.h"
-#include "FoamGenerationMain.h"
 
 using namespace HDK_Sample;
 namespace fs = std::filesystem;
@@ -21,22 +20,23 @@ namespace fs = std::filesystem;
 
 static PRM_Name inputDirPathName("inputDirPath", "Input Directory Path");
 static PRM_Name outputDirPathName("outputDirPath", "Output Directory Path");
-static PRM_Name generateName("generate", "Generate");
+static PRM_Name generateName("generate", "Automatic");
 
-static PRM_Default inputDirPathDefault(0, "C:/Documents/Upenn/CIS6600/FINAL/Output/partio");
-static PRM_Default outputDirPathDefault(0, "C:/Documents/Upenn/CIS6600/FINAL/Output/foam");
+static PRM_Default inputDirPathDefault(0, "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/partio/ParticleData_Fluid_#.bgeo");
+static PRM_Default outputDirPathDefault(0, "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/foam2/foam_#.bgeo");
 static PRM_Default generateDefault(0);
 
 static PRM_Name radiusName("radius", "Radius");
 static PRM_Name buoyancyName("buoyancy", "Buoyancy");
 static PRM_Name dragName("drag", "Drag Coefficient");
 static PRM_Name foamScaleName("foamScale", "Foam Scale");
+static PRM_Name timeStepName("timeStep", "Time Step");
 
 static PRM_Default buoyancyDefault(2.0);
 static PRM_Default dragDefault(1.0); // Assuming you need this parameter, as mentioned.
 static PRM_Default foamScaleDefault(300);
 static PRM_Default radiusDefault(0.025f); // Note the 'f' to indicate a float literal
-
+static PRM_Default timeStepDefault(0.02f);
 
 static PRM_Name lifeLimitsName("life_limits", "Lifetime limits (min/max)");
 static PRM_Default lifeDefaults[] = { PRM_Default(2), PRM_Default(5) };
@@ -89,6 +89,7 @@ SOP_FOAMGENERATOR::myTemplateList[] = {
     PRM_Template(PRM_FLT, 1, &buoyancyName, &buoyancyDefault), // Buoyancy
     PRM_Template(PRM_FLT, 1, &dragName, &dragDefault), // Drag Coefficient
     PRM_Template(PRM_FLT, 1, &foamScaleName, &foamScaleDefault), // Foam Scale
+    PRM_Template(PRM_FLT, 1, &timeStepName, &timeStepDefault), // Foam Scale
 
     PRM_Template(PRM_FLT, 2, &lifeLimitsName, lifeDefaults), // Lifetime limits (min/max)
     PRM_Template(PRM_FLT, 2, &frameLimitsName, frameDefaults), // Frame limits (start/end)
@@ -162,51 +163,65 @@ SOP_FOAMGENERATOR::disableParms()
     return 0;
 }
 
+std::string appendString(std::string flag, std::string input){
+    return flag+" "+input+" ";
+}
+
 OP_ERROR
 SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
 {
 	fpreal	now = context.getTime();
 
-    std::unordered_map<std::string, std::any> params;
+    //std::unordered_map<std::string, std::any> params;
 
     UT_String inputDirPath, outputDirPath;
     evalString(inputDirPath, inputDirPathName.getToken(), 0, now);
     evalString(outputDirPath, outputDirPathName.getToken(), 0, now);
-    
-    params["inputDirPath"] = inputDirPath.toStdString();
-    params["outputDirPath"] = outputDirPath.toStdString();
-
+    //std::cout<<"get here"<<std::endl;
+    //params.insert_or_assign("inputDirPath", inputDirPath.toStdString());
+    std::string inputPath = inputDirPath.toStdString();
+    std::string outputPath = outputDirPath.toStdString();
+    //std::cout<<"get here"<<std::endl;
     // Reading and storing toggle (boolean) parameter
-    params["generate"] = evalInt(generateName.getToken(), 0, now);
+    std::string generate = std::to_string(evalInt(generateName.getToken(), 0, now));
 
     // Reading and storing float parameters
-    params["radius"] = evalFloat(radiusName.getToken(), 0, now);
-    params["buoyancy"] = evalFloat(buoyancyName.getToken(), 0, now);
-    params["drag"] = evalFloat(dragName.getToken(), 0, now);
-    params["foamScale"] = evalFloat(foamScaleName.getToken(), 0, now);
+    std::string radius = std::to_string(evalFloat(radiusName.getToken(), 0, now));
+    std::string buoyancy = std::to_string(evalFloat(buoyancyName.getToken(), 0, now));
+    std::string drag = std::to_string(evalFloat(dragName.getToken(), 0, now));
+    std::string foamScale = std::to_string(evalFloat(foamScaleName.getToken(), 0, now));
+    std::string timeStep = std::to_string(evalFloat(timeStepName.getToken(), 0, now));
 
     // Reading and storing float parameters with limits (min/max)
-    params["lifeMin"] = evalFloat(lifeLimitsName.getToken(), 0, now);
-    params["lifeMax"] = evalFloat(lifeLimitsName.getToken(), 1, now);
+    std::string lifeMin = std::to_string(evalFloat(lifeLimitsName.getToken(), 0, now));
+    std::string lifeMax = std::to_string(evalFloat(lifeLimitsName.getToken(), 1, now));
 
-    params["startFrame"] = evalFloat(frameLimitsName.getToken(), 0, now);
-    params["endFrame"] = evalFloat(frameLimitsName.getToken(), 1, now);
+    std::string startFrame = std::to_string(evalInt(frameLimitsName.getToken(), 0, now));
+    std::string endFrame = std::to_string(evalInt(frameLimitsName.getToken(), 1, now));
 
-    // Reading and storing ORD parameters and their limits
-    params["taFactor"] = evalFloat(taFactorName.getToken(), 0, now);
-    params["taMin"] = evalFloat(taLimitsName.getToken(), 0, now);
-    params["taMax"] = evalFloat(taLimitsName.getToken(), 1, now);
+    // Reading and storing float parameters and their limits
+    std::string taFactor = std::to_string(evalFloat(taFactorName.getToken(), 0, now));
+    std::string taMin = std::to_string(evalFloat(taLimitsName.getToken(), 0, now));
+    std::string taMax = std::to_string(evalFloat(taLimitsName.getToken(), 1, now));
 
-    params["wcFactor"] = evalFloat(wcFactorName.getToken(), 0, now);
-    params["wcMin"] = evalFloat(wcLimitsName.getToken(), 0, now);
-    params["wcMax"] = evalFloat(wcLimitsName.getToken(), 1, now);
+    std::string wcFactor = std::to_string(evalFloat(wcFactorName.getToken(), 0, now));
+    std::string wcMin = std::to_string(evalFloat(wcLimitsName.getToken(), 0, now));
+    std::string wcMax = std::to_string(evalFloat(wcLimitsName.getToken(), 1, now));
 
-    params["voFactor"] = evalFloat(voFactorName.getToken(), 0, now);
-    params["voMin"] = evalFloat(voLimitsName.getToken(), 0, now);
-    params["voMax"] = evalFloat(voLimitsName.getToken(), 1, now);
+    std::string voFactor = std::to_string(evalFloat(voFactorName.getToken(), 0, now));
+    std::string voMin = std::to_string(evalFloat(voLimitsName.getToken(), 0, now));
+    std::string voMax = std::to_string(evalFloat(voLimitsName.getToken(), 1, now));
     
+   
+    UT_String foamType;
+    evalString(foamType, sopStringName.getToken(), 0, now);
+
+    std::string runCommand;
+    runCommand += SOURCE_PATH;
+    runCommand += " " + appendString("-s", startFrame) + appendString("-e", endFrame) + appendString("--lifetime", lifeMin +"," +lifeMax) + appendString("-r", radius) + appendString("-b", buoyancy) + appendString("-d", drag) + appendString("-t", timeStep)+appendString("-f",foamScale);
+
+   
     
-    runSimulationFromNode(params); 
 
 	// PUT YOUR CODE HERE
 	// Declare all the necessary variables for drawing cylinders for each branch 
@@ -251,11 +266,10 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
 		// Use GU_PrimPoly poly = GU_PrimPoly::build(see what values it can take)
 		// Also use GA_Offset ptoff = poly->getPointOffset()
 		// and gdp->setPos3(ptoff,YOUR_POSITION_VECTOR) to build geometry.
-        
-
-
-
-
+        GA_ROHandleS pathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+	    std::string inputpath = getParameters(pathHandle).toStdString();
+        runCommand+=("-i", inputPath+"/ParticleData_Fluid") + appendString("-o", outputPath+"/foam");
+        std::cout << "Command: " << runCommand << std::endl;
 		////////////////////////////////////////////////////////////////////////////////////////////
 
 	    // Highlight the star which we have just generated.  This routine
