@@ -12,6 +12,7 @@
 #include <iostream>
 #include <filesystem>
 #include "FoamGeneratorNode.h"
+#include <OP/OP_AutoLockInputs.h>
 
 using namespace HDK_Sample;
 namespace fs = std::filesystem;
@@ -20,7 +21,7 @@ namespace fs = std::filesystem;
 
 static PRM_Name inputDirPathName("inputDirPath", "Input Directory Path");
 static PRM_Name outputDirPathName("outputDirPath", "Output Directory Path");
-static PRM_Name generateName("generate", "Automatic");
+static PRM_Name generateName("generate", "Not-Automatic");
 
 static PRM_Default inputDirPathDefault(0, "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/partio/ParticleData_Fluid_#.bgeo");
 static PRM_Default outputDirPathDefault(0, "C:/Users/cryst/Documents/Upenn/CIS6600/Final/basecode/OUTPUT/foam2/foam_#.bgeo");
@@ -74,6 +75,22 @@ static PRM_Name         sopStrChoices[] =
 };
 static PRM_ChoiceList   sopStringMenu(PRM_CHOICELIST_TOGGLE, sopStrChoices);
 
+static PRM_Name simulateButtonName("simulate", "Simulate");
+static PRM_Default simulateButtonNameDefault(0);
+
+int SOP_FOAMGENERATOR::simulateFoam(void* data, int index, float time, const PRM_Template* tplate){
+    
+    SOP_FOAMGENERATOR* sop = static_cast<SOP_FOAMGENERATOR*>(data);
+    std::cout << "Button Pressed " <<sop->runCommand.c_str()<< std::endl;
+    int result = system(sop->runCommand.c_str());
+    if(result == -1) {
+        perror("Error executing command");
+    } else {
+        std::cout << "Command returned: " << result << std::endl;
+    }
+    return 0;
+}
+
 PRM_Template
 SOP_FOAMGENERATOR::myTemplateList[] = {
 // PUT YOUR CODE HERE
@@ -81,8 +98,7 @@ SOP_FOAMGENERATOR::myTemplateList[] = {
 // EXAMPLE : For the angle parameter this is how you should add into the template
 // PRM_Template(PRM_FLT,	PRM_Template::PRM_EXPORT_MIN, 1, &angleName, &angleDefault, 0),
 // Similarly add all the other parameters in the template format here
-    PRM_Template(PRM_STRING, 1, &inputDirPathName, &inputDirPathDefault), // Input Directory Path
-    PRM_Template(PRM_STRING, 1, &outputDirPathName, &outputDirPathDefault), // Output Directory Path
+    PRM_Template(PRM_CALLBACK, 1, &simulateButtonName, &simulateButtonNameDefault, nullptr, nullptr, &simulateFoam, nullptr),
     PRM_Template(PRM_TOGGLE, 1, &generateName, &generateDefault), // Generate
     
     PRM_Template(PRM_FLT, 1, &radiusName, &radiusDefault), // Radius
@@ -167,6 +183,27 @@ std::string appendString(std::string flag, std::string input){
     return flag+" "+input+" ";
 }
 
+// get parameter from the handle
+UT_String SOP_FOAMGENERATOR::getParameters(GA_ROHandleS paraHandle) {
+	// get parameters from the input from last ndoe
+	if (paraHandle.isValid()) {
+		UT_String value;
+		value = paraHandle.get(GA_Offset(0));
+		if (value) {
+			std::cout << "Retrieved attribute value: " << value.toStdString() << std::endl;
+			return value;
+		}
+		else {
+			std::cout << "Failed to get attribute value." << std::endl;
+            return UT_String("");
+		}
+	}
+	else {
+		std::cout << "Attribute handle is not valid." << std::endl;
+        return UT_String("");
+	}
+}
+
 OP_ERROR
 SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
 {
@@ -216,8 +253,7 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
     UT_String foamType;
     evalString(foamType, sopStringName.getToken(), 0, now);
 
-    std::string runCommand;
-    runCommand += SOURCE_PATH;
+    runCommand = SOURCE_PATH;
     runCommand += " " + appendString("-s", startFrame) + appendString("-e", endFrame) + appendString("--lifetime", lifeMin +"," +lifeMax) + appendString("-r", radius) + appendString("-b", buoyancy) + appendString("-d", drag) + appendString("-t", timeStep)+appendString("-f",foamScale);
 
    
@@ -245,41 +281,49 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
     // Check to see that there hasn't been a critical error in cooking the SOP.
     if (error() < UT_ERROR_ABORT)
     {
-	boss = UTgetInterrupt();
-	if (divisions < 4)
-	{
-	    // With the range restriction we have on the divisions, this
-	    //	is actually impossible, but it shows how to add an error
-	    //	message or warning to the SOP.
-	    addWarning(SOP_MESSAGE, "Invalid divisions");
-	    divisions = 4;
-	}
-	gdp->clearAndDestroy();
+        boss = UTgetInterrupt();
+        if (divisions < 4)
+        {
+            // With the range restriction we have on the divisions, this
+            //	is actually impossible, but it shows how to add an error
+            //	message or warning to the SOP.
+            addWarning(SOP_MESSAGE, "Invalid divisions");
+            divisions = 4;
+        }
+        gdp->clearAndDestroy();
+        OP_AutoLockInputs inputs(this);
+		if (inputs.lock(context) >= UT_ERROR_ABORT)
+			return error();
 
-	// Start the interrupt server
-	if (boss->opStart("Building LSYSTEM"))
-	{
-        // PUT YOUR CODE HERE
-	    // Build a polygon
-	    // You need to build your cylinders inside Houdini from here
-		// TIPS:
-		// Use GU_PrimPoly poly = GU_PrimPoly::build(see what values it can take)
-		// Also use GA_Offset ptoff = poly->getPointOffset()
-		// and gdp->setPos3(ptoff,YOUR_POSITION_VECTOR) to build geometry.
-        GA_ROHandleS pathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
-	    std::string inputpath = getParameters(pathHandle).toStdString();
-        runCommand+=("-i", inputPath+"/ParticleData_Fluid") + appendString("-o", outputPath+"/foam");
-        std::cout << "Command: " << runCommand << std::endl;
-		////////////////////////////////////////////////////////////////////////////////////////////
+		// Duplicate our incoming geometry with the hint that we only
+		// altered points.  Thus, if our input was unchanged, we can
+	// easily roll back our changes by copying point values.
+		duplicatePointSource(0, context);
 
-	    // Highlight the star which we have just generated.  This routine
-	    // call clears any currently highlighted geometry, and then it
-	    // highlights every primitive for this SOP. 
-	    select(GU_SPrimitive);
-	}
+        // Start the interrupt server
+        if (boss->opStart("Building LSYSTEM"))
+        {
+            
+            // PUT YOUR CODE HERE
+            // Build a polygon
+            // You need to build your cylinders inside Houdini from here
+            // TIPS:
+            // Use GU_PrimPoly poly = GU_PrimPoly::build(see what values it can take)
+            // Also use GA_Offset ptoff = poly->getPointOffset()
+            // and gdp->setPos3(ptoff,YOUR_POSITION_VECTOR) to build geometry.
+            GA_ROHandleS pathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+            std::string path = getParameters(pathHandle).toStdString();
+            runCommand+=appendString("-i",path+"/partio/ParticleData_Fluid_#.bgeo") + appendString("-o", path+"/foam/foam_#.bgeo");
+            ////////////////////////////////////////////////////////////////////////////////////////////
 
-	// Tell the interrupt server that we've completed. Must do this
-	// regardless of what opStart() returns.
+            // Highlight the star which we have just generated.  This routine
+            // call clears any currently highlighted geometry, and then it
+            // highlights every primitive for this SOP. 
+            select(GU_SPrimitive);
+        }
+
+        // Tell the interrupt server that we've completed. Must do this
+	    // regardless of what opStart() returns.
 	boss->opEnd();
     }
 
