@@ -524,14 +524,6 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	
 	// Handle to manage the file path attribute
 	evalString(myOutputPath, cacheFluidPathName.getToken(), 0, t);
-	//GA_RWHandleS file_path_handle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
-	//if (!file_path_handle.isValid()) {
-	//	file_path_handle = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
-	//}
-
-	//if (file_path_handle.isValid()) {
-	//	file_path_handle.set(GA_Offset(0), myOutputPath);
-	//}
 
 	UT_String paramName(inputPathName.getToken());
 	GA_RWHandleS attrib(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));

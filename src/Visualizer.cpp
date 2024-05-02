@@ -34,8 +34,8 @@ static PRM_Name frameIndex("frameIndex", "Frame Index");
 
 // Declare parameters' default value for the SOP
 static PRM_Default partioFileDefault(0.0, "");
-static PRM_Default colorAttrNameDefault(0.0, "");
-static PRM_Default rotationAttrNameDefault(0.0, "");
+static PRM_Default colorAttrNameDefault(0.0, "velocity");
+static PRM_Default rotationAttrNameDefault(0.0, "v");
 static PRM_Default minValDefault(0.0);
 static PRM_Default maxValDefault(1.0);
 static PRM_Default frameIndexDefault(1.0);
@@ -185,11 +185,19 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			///setString(inputPath, CH_StringMeaning(), inputPathName.getToken(), 0, now);
 			inputPathHandle.set(GA_Offset(0), inputPath);
 
+			fs::path path(inputPath.toStdString());
+
+			path /= "patio/ParticleData_Fuild";
+
+			std::string patioPathStr = path.string();
+			std::replace(patioPathStr.begin(), patioPathStr.end(), '\\', '/');
+
 
 			// Construct the dynamic file path using current frame
 			// check if the file exists
 			UT_String partioFilePath;
-			partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.toStdString().c_str(), frameIndex);
+			//partioFilePath.sprintf("%s_%d.bgeo", patioPathStr.c_str(), frameIndex);
+			partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.c_str(), frameIndex);
 
 			std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
 			// Get the color attribute name from the parameter
