@@ -22,7 +22,7 @@ public:
     /// This optional data stores the list of local variables.
     static CH_LocalVariable	 myVariables[];
     bool lastCheckboxState = false;
-
+    std::unordered_map<std::string, std::any> params;
 protected:
 
 	SOP_FOAMGENERATOR(OP_Network *net, const char *name, OP_Operator *op);
@@ -30,7 +30,7 @@ protected:
 
     /// Disable parameters according to other parameters.
     virtual unsigned		 disableParms();
-    std::unordered_map<std::string, std::any> params;
+    
 
     /// cookMySop does the actual work of the SOP computing, in this
     /// case, a LSYSTEM
@@ -71,6 +71,7 @@ private:
 	// NOTE : You can declare local variables here like this  
     int		myCurrPoint;
     int		myTotalPoints;
+    
 };
 } // End HDK_Sample namespace
 

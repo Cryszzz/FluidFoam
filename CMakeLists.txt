@@ -23,7 +23,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Paths for Houdini and Partio libraries
 set(HOUDINI_INSTALL_PATH "C:/Program Files/Side Effects Software/Houdini20.0.625")
 set(HOUDINI_LIB_PATH "${HOUDINI_INSTALL_PATH}/custom/houdini/dsolib")
-set(Partio_LIBRARIES "${CMAKE_SOURCE_DIR}/lib/partio.lib") 
+# set(Partio_LIBRARIES "${CMAKE_SOURCE_DIR}/lib/partio.lib") 
 
 if (NOT EXISTS "${HOUDINI_INSTALL_PATH}")
     message(FATAL_ERROR "Houdini install path not found: ${HOUDINI_INSTALL_PATH}")
@@ -67,6 +67,10 @@ add_subdirectory(Utilities)
 include(DataCopyTargets)
 # add_subdirectory(FoamGenerator)
 add_subdirectory(Simulator)
+add_subdirectory(FoamGenerator)
+
+add_definitions(-DSOURCE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/bin/FoamGenerator.exe")
+
 message(STATUS "Checking directory: ${PROJECT_SOURCE_DIR}/data/shaders")
 # Define source and header files
 set(SOURCE_FILES
@@ -77,8 +81,6 @@ set(SOURCE_FILES
     src/vec.cpp
     src/FluidSimulator.cpp
     src/FoamGeneratorNode.cpp
-    src/FoamGenerationMain.cpp
-    src/FoamKernel.cpp
     src/FluidConfiguration.cpp
     src/RigidBody.cpp
 )
@@ -91,8 +93,6 @@ set(HEADER_FILES
     src/vec.h
     src/FluidSimulator.h
     src/FoamGeneratorNode.h
-    src/FoamGenerationMain.h
-    src/FoamKernel.h
     src/FluidConfiguration.h
     src/RigidBody.h
 )
@@ -115,8 +115,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 link_directories(${HOUDINI_LIB_PATH})
 
 file(GLOB LIB_FILES "${HOUDINI_LIB_PATH}/*.lib")
-target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_FILES}" "${Partio_LIBRARIES}" 
+target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_FILES}"
     SPlisHSPlasH # Link to SPlisHSPlasH library
+    SimulatorBase
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

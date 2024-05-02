@@ -8,6 +8,9 @@
 #include "Plugin.h"
 
 using namespace HDK_Sample;
+
+INIT_TIMING
+INIT_LOGGING
 //
 // Help is stored in a "wiki" style text file. 
 //
