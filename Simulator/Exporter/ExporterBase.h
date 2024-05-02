@@ -27,6 +27,8 @@ namespace SPH
 
 		virtual void setActive(const bool active) { m_active = active; }
 		virtual bool getActive() const { return m_active; }
+
+		virtual void myStep(const unsigned int frame) = 0;
 	};
 }
 

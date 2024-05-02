@@ -30,6 +30,9 @@ namespace SPH
 		virtual void step(const unsigned int frame);
 		virtual void reset();
 		virtual void setActive(const bool active); 
+
+		// New Function for the Houdini plugin
+		virtual void myStep(const unsigned int frame);
 	};
 }
 

@@ -39,6 +39,8 @@ namespace SPH
 		virtual void step(const unsigned int frame);
 		virtual void reset();
 		virtual void setActive(const bool active); 
+
+		virtual void myStep(const unsigned int frame);
 	};
 }
 

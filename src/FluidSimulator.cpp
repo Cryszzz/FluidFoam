@@ -30,11 +30,10 @@ using namespace HDK_Sample;
 using namespace Utilities;
 namespace fs = std::filesystem;
 
-INIT_COUNTING
 
 void initFluidSimulator(SPH::SimulatorBase& obj,
-	std::string sceneFile = "data/Scenes/DoubleDamBreak.json", // TODO: change to empty default
-	std::string programName = "pySPlisHSPlasH",
+	std::string sceneFile = "data/Scenes/DoubleDamBreak.json", 
+	std::string programName = "SPlisHSPlasH",
 	bool useCache = true,
 	std::string stateFile = "",
 	std::string outputDir = "",
@@ -42,6 +41,7 @@ void initFluidSimulator(SPH::SimulatorBase& obj,
 	bool useGui = true,
 	float stopAt = -1.0f,
 	std::string param = "")  {
+
 	std::cout << "Initializing Fluid Simulator..." << std::endl;
 
 	std::vector<std::string> argv;
@@ -66,6 +66,37 @@ void initFluidSimulator(SPH::SimulatorBase& obj,
 	if (!useGui) argv.push_back("--no-gui");
 	obj.init(argv, "SPlisHSPlasH");
 }
+
+void myRunSimulation(SPH::SimulatorBase& obj, std::vector<std::vector<std::vector<Vector3r>>>& my_particles) {
+	std::cout << "Running Simulation..." << std::endl;
+	obj.deferredInit();
+	obj.setCommandLineParameter_pub();
+
+
+	
+	const Real stopAt = obj.getValue<Real>(obj.SimulatorBase::STOP_AT);
+	std::cout << "StopAt: " << stopAt << std::endl;
+
+	if (stopAt < 0.0)
+	{
+		LOG_ERR << "StopAt parameter must be set when starting without GUI.";
+		exit(1);
+	}
+
+	int frameCounter = 0;
+
+	while (true)
+	{
+		
+		
+		if (!obj.myTimeStepNoGUI(frameCounter, my_particles))
+			break;
+
+		frameCounter++;
+	}
+	
+
+}	
 
 void fluid_printCurrentPath() {
 	std::cout << "Current Path: " << fs::current_path() << std::endl;
@@ -165,28 +196,49 @@ float getStringParamAsFloat(static PRM_Name &name) {
 	return 0.0;
 }
 
+void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::vector<Vector3r>>>& particles_in_frames) {
+	std::cout << "Drawing Particles in frame" << frame << std::endl;
+	//std::cout << "Number of particles for drawing: " << pos.size() << std::endl;
+	// get the particles of the current frame
+	std::vector<std::vector<Vector3r>> particles = particles_in_frames[frame];
+	// get the number of particles in the current frame
+	std::cout << "Number of particles in the current frame: " << particles.size() << std::endl;
+	for (size_t i = 0; i < particles.size(); ++i) {
+		
+		GA_Offset ptoff = gdp->appendPoint();
+		fpreal32 x = particles[i][0].x();
+		fpreal32 y = particles[i][0].y();
+		fpreal32 z = particles[i][0].z();
+		UT_Vector3 posH(x, y, z);
+		gdp->setPos3(ptoff, posH);
+	}
+}
+
 /*static*/ int SOP_FUILDSIMULATOR::simulateFluid(void* data, int index, float time, const PRM_Template* tplate) {
 	// Handle the button press event here
 	std::cout << "Button Pressed" << std::endl;
 	SOP_FUILDSIMULATOR* sop = static_cast<SOP_FUILDSIMULATOR*>(data);
 	//OP_Context& context = sop->getContext();
 	fpreal	now = sop->lastCookTime;
-
-	//sop->populateParameters(now);
-
 	
 	try
 	{
 		static unsigned int m_stopCounter;
-		//sop->mySim->init(particleRadius, false);
-		//sop->mySimulator->createExporters();
-		//sop->mySimulator->initParameters();
+		std::cout << "Simulator initializing ..." << std::endl;
 
-		std::cout << "Simulator initialized." << std::endl;
+		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", "", false, false, 0.2f, "");
+		sop->mySimulator->initSimulation(); // this line is working good
+		// need to divide runSimulation() so I can have the attributes of the particles not in patio format
+		// checked the runSimulation() function in SimulatorBase.cpp and all necessary member functions are not private
+		if (!sop->my_pos || !sop->my_vel || !sop->my_angVel || !sop->my_particles) {
+			// Handle the uninitialized case
+			std::cerr << "One or more vectors are not initialized properly.\n";
+			return 0;
+		}
 
-		// pass parameters to mySim
-		//sop->mySim->setParticleRadius(particleRadius);
-		
+		myRunSimulation(*sop->mySimulator, *sop->my_particles);
+
+		sop->mySimulator->cleanup();
 
 	}
 	catch (const std::exception&)
@@ -268,6 +320,10 @@ SOP_FUILDSIMULATOR::SOP_FUILDSIMULATOR(OP_Network* net, const char* name, OP_Ope
 	mySim = std::unique_ptr<SPH::Simulation>(new SPH::Simulation());
 	mySceneLoader = std::unique_ptr<Utilities::SceneLoader>(new Utilities::SceneLoader());
 	mySimulator = std::unique_ptr<SPH::SimulatorBase>(new SPH::SimulatorBase());
+	my_pos = std::make_unique<std::vector<Vector3r>>();
+	my_vel = std::make_unique<std::vector<Vector3r>>();
+	my_angVel = std::make_unique<std::vector<Vector3r>>();
+	my_particles = std::make_unique<std::vector<std::vector<std::vector<Vector3r>>>>();
 }
 
 SOP_FUILDSIMULATOR::~SOP_FUILDSIMULATOR() {}
@@ -458,6 +514,8 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	// write to json file
 	fs::path jsonFilePath = fs::absolute("testParametersForSimulator.json");
 
+	mySceneFile = jsonFilePath.string();
+
 	std::ostringstream jsonStream;
 	jsonStream << std::fixed; // Ensures floating point values are not written in scientific notation.
 
@@ -467,7 +525,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 		jsonStream << "  \"Configuration\": {\n";
 		jsonStream << "    \"particleRadius\": " << particleRadius << ",\n";
 		jsonStream << "    \"timeStepSize\": " << timeStepSizeValue << ",\n";
-		jsonStream << "    \"density0\": " << 1000 << ",\n";
+		jsonStream << "    \"density0\": " << 500 << ",\n";
 		jsonStream << "    \"simulationMethod\": " << 4 << ",\n";
 		jsonStream << "    \"cflMethod\": " << cflMethod << ",\n";
 		jsonStream << "    \"cflFactor\": " << cflFactor << ",\n";
@@ -570,7 +628,7 @@ SOP_FUILDSIMULATOR::cookMySop(OP_Context& context)
 {
 	fpreal	now = context.getTime();
 	lastCookTime = now;
-
+	//mySimulator = std::unique_ptr<SPH::SimulatorBase>(new SPH::SimulatorBase());
 
 
 	// Add gravitation as an array
@@ -582,7 +640,8 @@ SOP_FUILDSIMULATOR::cookMySop(OP_Context& context)
 	myTotalPoints = 0;		// Set the NPT local variable value
 	myCurrPoint = 0;			// Initialize the PT local variable
 
-
+	// get current frame
+	int frame = context.getFrame();
 
 	// Check to see that there hasn't been a critical error in cooking the SOP.
 	if (error() < UT_ERROR_ABORT)
@@ -608,24 +667,19 @@ SOP_FUILDSIMULATOR::cookMySop(OP_Context& context)
 		// Start the interrupt server
 		if (boss->opStart("Building Fluid Simulator"))
 		{
-			UT_String aname("particleRadius");
-			// Using GA_RWHandleS for string attributes
-			GA_RWHandleS attrib(gdp->findStringTuple(GA_ATTRIB_DETAIL, aname));
-
-			// Not present, so create the detail attribute:
-			if (!attrib.isValid()) {
-				attrib = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, aname, 1));
-				std::cout << "Attribute added." << std::endl;
-			}
-
-			if (attrib.isValid()) {
-				// Store the value in the detail attribute
-				// NOTE: The detail is *always* at GA_Offset(0)
-				
-			}
+			
 
 			// test get detail attribute
 			populateParameters(now);
+
+			std::cout << "my_particles size: " << my_particles->size() << std::endl;
+
+			if (!my_particles->empty()) {
+				// draw particles
+				std::cout << "Drawing particles on cook on frame: " << frame << std::endl;
+				drawParticles(frame, *my_particles);
+			}
+			
 
 			////////////////////////////////////////////////////////////////////////////////////////////
 
