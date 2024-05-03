@@ -35,6 +35,7 @@ namespace HDK_Sample {
         std::unique_ptr<SPH::Simulation> mySim;
         std::unique_ptr<Utilities::SceneLoader> mySceneLoader;
 		std::unique_ptr<SPH::SimulatorBase> mySimulator;
+
 		
         std::string mySceneFile;
         std::unique_ptr<std::vector<Vector3r>> my_pos;
@@ -47,6 +48,7 @@ namespace HDK_Sample {
 
         // output patio file path as parameter in detail string
         UT_String myOutputPath;
+        float my_stopAt;
 
 
         fpreal lastCookTime;

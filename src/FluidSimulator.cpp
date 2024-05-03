@@ -244,14 +244,14 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 		std::cout << "Simulator initializing ..." << std::endl;
 		std::string clearFluidPath = sop->myOutputPath.toStdString() + "/partio";
 		std::cout<<clearFluidPath<<std::endl;
-		//clearDirectory(clearFluidPath);
+		clearDirectory(clearFluidPath);
 		std::filesystem::path cwd = std::filesystem::current_path()/"Cache";
 		std::cout<<cwd.string()<<std::endl;
-		//clearDirectory(cwd.string());
+		clearDirectory(cwd.string());
 
-
-		sop->populateParameters(now);
-		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, 10.f, "");
+		sop->mySimulator.release();
+		sop->mySimulator = std::unique_ptr<SPH::SimulatorBase>(new SPH::SimulatorBase());
+		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, sop->my_stopAt, "");
 		sop->mySimulator->initSimulation(); // this line is working good
 		// need to divide runSimulation() so I can have the attributes of the particles not in patio format
 		// checked the runSimulation() function in SimulatorBase.cpp and all necessary member functions are not private
@@ -388,6 +388,8 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 
 	GA_RWHandleS stopAtHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "stopAt"));
 	UT_String stopAt = getParameters(stopAtHandle);
+	my_stopAt = stopAt.toFloat();
+	//std::cout << "StopAt: " << my_stopAt << std::endl;
 
 
 	GA_RWHandleS particleRadiusHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "particleRadius"));
