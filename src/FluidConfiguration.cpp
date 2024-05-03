@@ -26,13 +26,13 @@ static PRM_Name tabName("fluid");
 
 static PRM_Default  tabList[] = {
 	PRM_Default(14, "configuration"),        // 1 is number of parameters in tab
-	PRM_Default(11, "materials"),
+	PRM_Default(14, "materials"),
 	PRM_Default(0, "Other")
 };
 
 static PRM_Name ConfigurationNames[] = {
     PRM_Name("timeStepSize", "Initial Time Step Size"),
-	PRM_Name("stopAt", "stop at time"),
+	PRM_Name("stopAt", "Stop At Time"),
     PRM_Name("particleRadius", "Particle Radius"),
     PRM_Name("enableZSort", "Enable Z-Sort"),
     PRM_Name("gravitation", "Gravitation"),
@@ -66,6 +66,8 @@ static PRM_Default ConfigurationDefaults[] = {
 };
 
 static PRM_Default gravitationDefaults[] = { PRM_Default(0), PRM_Default(-9.81f), PRM_Default(0) };
+static PRM_Default initialVelocityDefaults[] = { PRM_Default(0), PRM_Default(0.0f), PRM_Default(0.0) };
+static PRM_Default initialAngularVelocityDefaults[] = { PRM_Default(0), PRM_Default(-9.81f), PRM_Default(0) };
 
 static PRM_Name MaterialsName[] = {
     PRM_Name("viscosityMethod", "Viscosity Method"),  // Method for viscosity computation
@@ -79,6 +81,9 @@ static PRM_Name MaterialsName[] = {
     PRM_Name("vorticity", "Vorticity"),               // Coefficient for vorticity force computation
     PRM_Name("viscosityOmega", "Viscosity Omega"),    // Viscosity coefficient for the angular velocity (Micropolar model)
     PRM_Name("inertiaInverse", "Inertia Inverse"),  
+	PRM_Name("density", "Density"), 
+	PRM_Name("initialVelocity", "Initial Velocity"), 
+	PRM_Name("initialAngularVelocity", "Initial Angular Velocity"), 
     PRM_Name(0)                                            // End of array marker
 };
 
@@ -93,7 +98,8 @@ static PRM_Default MaterialsDefaults[] = {
     PRM_Default(0),                 // Default vorticity method
     PRM_Default(0.1f),              // Default coefficient for vorticity force computation
     PRM_Default(0.01f),             // Default viscosity coefficient for the angular velocity field (Micropolar model)
-    PRM_Default(1.0f)               // Default inverse microinertia for the Micropolar model
+    PRM_Default(1.0f),             // Default inverse microinertia for the Micropolar model
+	PRM_Default(1000.0f) 
 };
 
 static PRM_Name jsonUpdateName("json_update", "Update JSON");
@@ -145,6 +151,9 @@ SOP_FLUIDCONFIGURATION::myTemplateList[] = {
     PRM_Template(PRM_FLT, 1, &MaterialsName[8], &MaterialsDefaults[8]), // Vorticity
     PRM_Template(PRM_FLT, 1, &MaterialsName[9], &MaterialsDefaults[9]), // Viscosity Omega
     PRM_Template(PRM_FLT, 1, &MaterialsName[10], &MaterialsDefaults[10]), // Inertia Inverse
+	PRM_Template(PRM_FLT, 1, &MaterialsName[11], &MaterialsDefaults[11]), // Inertia Inverse
+	PRM_Template(PRM_XYZ, 3, &MaterialsName[12], initialVelocityDefaults), 
+	PRM_Template(PRM_XYZ, 3, &MaterialsName[13], initialAngularVelocityDefaults), 
 
 	PRM_Template() // Sentinel
 };
@@ -241,6 +250,15 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
 	float vorticity = evalFloat(MaterialsName[8].getToken(), 0, now);
 	float viscosityOmega = evalFloat(MaterialsName[9].getToken(), 0, now);
 	float inertiaInverse = evalFloat(MaterialsName[10].getToken(), 0, now);
+	float density = evalFloat(MaterialsName[11].getToken(), 0, now);
+	float initialVelocityX = evalFloat(MaterialsName[12].getToken(), 0, now);
+	float initialVelocityY = evalFloat(MaterialsName[12].getToken(), 1, now);
+	float initialVelocityZ = evalFloat(MaterialsName[12].getToken(), 2, now);
+	UT_Vector3 initialVelocity(initialVelocityX, initialVelocityY, initialVelocityZ);
+	float initialAngularVelocityX = evalFloat(MaterialsName[13].getToken(), 0, now);
+	float initialAngularVelocityY = evalFloat(MaterialsName[13].getToken(), 1, now);
+	float initialAngularVelocityZ = evalFloat(MaterialsName[13].getToken(), 2, now);
+	UT_Vector3 initialAngularVelocity(initialAngularVelocityX, initialAngularVelocityY, initialAngularVelocityZ);
 	// Now that you have all the branches ,which is the start and end point of each point ,its time to render 
 	// these branches into Houdini 
 	UT_String fluidFilePath;
@@ -390,6 +408,15 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
 						break;
 					case 10: // inertiaInverse
 						paramValue = std::to_string(inertiaInverse);
+						break;
+					case 11: // inertiaInverse
+						paramValue = std::to_string(density);
+						break;
+					case 12: // inertiaInverse
+						paramValue = std::to_string(initialVelocityX) + "," + std::to_string(initialVelocityY) + "," + std::to_string(initialVelocityZ);
+						break;
+					case 13: // inertiaInverse
+						paramValue = std::to_string(initialAngularVelocityX) + "," + std::to_string(initialAngularVelocityY) + "," + std::to_string(initialAngularVelocityZ);
 						break;
 					default:
 						break;
