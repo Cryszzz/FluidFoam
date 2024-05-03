@@ -24,6 +24,7 @@ public:
     bool lastCheckboxState = false;
     UT_String getParameters(GA_ROHandleS paraHandle);
     std::string runCommand;
+    std::string cleanpath;
     std::unordered_map<std::string, std::any> params;
 
 protected:

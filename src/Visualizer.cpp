@@ -40,15 +40,27 @@ static PRM_Default minValDefault(0.0);
 static PRM_Default maxValDefault(1.0);
 static PRM_Default frameIndexDefault(1.0);
 
+static PRM_Name drawingModeName("drawingMode", "Drawing Mode");
+static PRM_Default drawingModeDefault(0); // Default to lines
+static PRM_Name drawingModeList[] = {
+	PRM_Name("0", "FluidParticles"),
+	PRM_Name("1", "Foam_no_split"),
+	PRM_Name("2", "Foam_split_Bubbles"),
+	PRM_Name("3", "Foam_split_Spray"),
+	PRM_Name("4", "Foam_split_Foam"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList drawingModeMenu(PRM_CHOICELIST_SINGLE, drawingModeList);
 
 PRM_Template
 SOP_VISUALIZER::myTemplateList[] = {
-	{PRM_Template(PRM_FILE, 1, &partioFile, &partioFileDefault, 0)},
+	PRM_Template(PRM_ORD, 1, &drawingModeName, &drawingModeDefault, &drawingModeMenu),
+	/*{PRM_Template(PRM_FILE, 1, &partioFile, &partioFileDefault, 0)},
 	{PRM_Template(PRM_STRING, 1, &colorAttrName, &colorAttrNameDefault, 0)},
 	{PRM_Template(PRM_STRING, 1, &rotationAttrName, &rotationAttrNameDefault, 0)},
 	{PRM_Template(PRM_FLT,	PRM_Template::PRM_EXPORT_MIN, 1, &minVal, &minValDefault, 0)},
 	{PRM_Template(PRM_FLT, PRM_Template::PRM_EXPORT_MIN, 1, &maxVal, &maxValDefault, 0)},
-	{PRM_Template(PRM_FLT, PRM_Template::PRM_EXPORT_MIN, 1, &frameIndex, &frameIndexDefault, 0)},
+	{PRM_Template(PRM_FLT, PRM_Template::PRM_EXPORT_MIN, 1, &frameIndex, &frameIndexDefault, 0)},*/
 
 
 	PRM_Template()
@@ -151,6 +163,7 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 	std::cout << "Current frame: " << currentFrame << std::endl;
 	// Get the frame index from the parameter
 	int frameIndex = currentFrame;
+	int read_type=evalInt("drawingMode", 0, now);
 
 	
 
@@ -186,8 +199,36 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			inputPathHandle.set(GA_Offset(0), inputPath);
 
 			fs::path path(inputPath.toStdString());
+			
+			std::string suffix="";
+			switch (read_type)
+			{
+			case 0:
+				path /= "partio/ParticleData_Fluid";
+				break;
+			
+			case 1:
+				path /= "foam/foam";
+				break;
+			
+			case 2:
+				path /= "foam/foam";
+				suffix="_foam";
+				break;
 
-			path /= "partio/ParticleData_Fluid";
+			case 3:
+				path /= "foam/foam";
+				suffix="_spray";
+				break;
+			
+			case 4:
+				path /= "foam/foam";
+				suffix="_bubbles";
+				break;
+			
+			default:
+				break;
+			}
 
 			std::string patioPathStr = path.string();
 			std::replace(patioPathStr.begin(), patioPathStr.end(), '\\', '/');
@@ -196,7 +237,7 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			// Construct the dynamic file path using current frame
 			// check if the file exists
 			UT_String partioFilePath;
-			partioFilePath.sprintf("%s_%d.bgeo", patioPathStr.c_str(), frameIndex);
+			partioFilePath.sprintf("%s_%d%s.bgeo", patioPathStr.c_str(), frameIndex,suffix.c_str());
 			//partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.c_str(), frameIndex);
 
 			std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
