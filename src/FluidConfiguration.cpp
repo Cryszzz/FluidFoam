@@ -300,6 +300,7 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
 						break;
 					case 1: // particleRadius
 						paramValue = std::to_string(stopAt);
+						break;
 					case 2: // particleRadius
 						paramValue = std::to_string(particleRadius);
 						break;
