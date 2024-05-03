@@ -18,11 +18,14 @@ public:
     /// Stores the description of the interface of the SOP in Houdini.
     /// Each parm template refers to a parameter.
     static PRM_Template		 myTemplateList[];
-
+    static int simulateFoam(void* data, int index, float time, const PRM_Template* tplate);
     /// This optional data stores the list of local variables.
     static CH_LocalVariable	 myVariables[];
     bool lastCheckboxState = false;
+    UT_String getParameters(GA_ROHandleS paraHandle);
+    std::string runCommand;
     std::unordered_map<std::string, std::any> params;
+
 protected:
 
 	SOP_FOAMGENERATOR(OP_Network *net, const char *name, OP_Operator *op);
@@ -69,6 +72,7 @@ private:
     /// Another use for local data is a cache to store expensive calculations.
 
 	// NOTE : You can declare local variables here like this  
+    
     int		myCurrPoint;
     int		myTotalPoints;
     
