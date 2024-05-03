@@ -4,6 +4,7 @@
 //#include <GEO/GEO_Point.h>
 //
 #include <SOP/SOP_Node.h>
+#include <OP/OP_AutoLockInputs.h>
 #include "SPlisHSPlasH/Simulation.h"
 #include "SPlisHSPlasH/Utilities/SceneLoader.h"
 #include "Simulator/SimulatorBase.h"
@@ -25,7 +26,7 @@ namespace HDK_Sample {
         static CH_LocalVariable	 myVariables[];
         bool lastCheckboxState = false;
 
-        void populateParameters(fpreal t);
+        void populateParameters(fpreal t, OP_AutoLockInputs inputs);
         UT_String getParameters(GA_ROHandleS paraHandle);
         static int simulateFluid(void* data, int index, float time, const PRM_Template* tplate);
 		void drawParticles(int frame, std::vector<std::vector<std::vector<Vector3r>>>& particles);

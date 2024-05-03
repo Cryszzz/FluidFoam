@@ -10,7 +10,6 @@
 #include <PRM/PRM_Include.h>
 #include <PRM/PRM_SpareData.h>
 #include <OP/OP_OperatorTable.h>
-#include <OP/OP_AutoLockInputs.h>
 #include <OP/OP_Operator.h>
 
 
@@ -336,6 +335,7 @@ SOP_FUILDSIMULATOR::SOP_FUILDSIMULATOR(OP_Network* net, const char* name, OP_Ope
 	my_particles = std::make_unique<std::vector<std::vector<std::vector<Vector3r>>>>();
 	fs::path patio_path = fs::absolute("patrio_output/");
 	myOutputPath = patio_path.string();
+	
 }
 
 SOP_FUILDSIMULATOR::~SOP_FUILDSIMULATOR() {}
@@ -358,15 +358,17 @@ UT_String SOP_FUILDSIMULATOR::getParameters(GA_ROHandleS paraHandle) {
 		}
 		else {
 			std::cout << "Failed to get attribute value." << std::endl;
+			return UT_String();
 		}
 	}
 	else {
 		std::cout << "Attribute handle is not valid." << std::endl;
+		return UT_String();
 	}
 }
 
 // get parameters from the previous node's detail list
-void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
+void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) {
 
 	std::cout << "Populating parameters..." << std::endl;
 
@@ -511,22 +513,15 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	setString(inertiaInverse, CH_StringMeaning(), MaterialsName[10].getToken(), 0, t);
 	float inertiaInverseValue = evalFloat(MaterialsName[10].getToken(), 0, t);
 
-	// populate rigid body parameters
-	GA_RWHandleS wallHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
-	UT_String isWall = getParameters(wallHandle);
-	setString(isWall, CH_StringMeaning(), wallName.getToken(), 0, t);
-	float isWallValue = evalFloat(wallName.getToken(), 0, t);
-
-	GA_RWHandleS rigidObjPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
-	UT_String rigidObjPath = getParameters(rigidObjPathHandle);
-	setString(rigidObjPath, CH_StringMeaning(), inputRigidObjPathName.getToken(), 0, t);
-	
-	
 	// Handle to manage the file path attribute
+	std::cout << "Getting partio output file path parameters..." << std::endl;
 	evalString(myOutputPath, cacheFluidPathName.getToken(), 0, t);
-
+	std::cout << "Partio output file path: " << myOutputPath.toStdString() << std::endl;
 	UT_String paramName(inputPathName.getToken());
+	std::cout << "Parameter name: " << paramName.toStdString() << std::endl;
 	GA_RWHandleS attrib(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+	std::cout << "Attribute handle is valid: " << attrib.isValid() << std::endl;
+
 	if (!attrib.isValid()) {
 		attrib = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
 	}
@@ -534,6 +529,42 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	UT_String outValue(paramValue.c_str());
 	attrib.set(GA_Offset(0), outValue);
 	attrib.bumpDataId();
+
+
+	// modify the logic so that it can take multiple rigid bodies
+	// loop thru inputs to get the rigid body parameters
+	int rigidBodyCount = 0;
+	std::vector<UT_String> rigidObjPaths;
+	std::vector<UT_String> isWalls;
+	std::cout << "Getting rigid body parameters..." << std::endl;
+	for (int i = 1; i < 11; i++) {
+		const GU_Detail* inputGdp = inputGeo(i);
+		if (!inputGdp) continue; // Check if input exists
+		rigidBodyCount++;
+		// get the rigid body path
+		GA_ROHandleS rigidObjPathHandle(inputGdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
+		UT_String rigidObjPath = getParameters(rigidObjPathHandle);
+		rigidObjPaths.push_back(rigidObjPath);
+		// get the isWall attribute
+		GA_ROHandleS isWallHandle(inputGdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
+		UT_String isWall = getParameters(isWallHandle);
+		isWalls.push_back(isWall);
+	}
+	std::cout << "Number of rigid bodies: " << rigidBodyCount << std::endl;
+	
+
+	// populate rigid body parameters
+	//GA_RWHandleS wallHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
+	//UT_String isWall = getParameters(wallHandle);
+	//setString(isWall, CH_StringMeaning(), wallName.getToken(), 0, t);
+	//float isWallValue = evalFloat(wallName.getToken(), 0, t);
+
+	//GA_RWHandleS rigidObjPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
+	//UT_String rigidObjPath = getParameters(rigidObjPathHandle);
+	//setString(rigidObjPath, CH_StringMeaning(), inputRigidObjPathName.getToken(), 0, t);
+	
+	
+
 
 
 	// write to json file
@@ -600,16 +631,37 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t) {
 	try
 	{
 		// RigidBodies Section
+		std::cout << "Writing rigid body parameters to JSON file..." << std::endl;
 		jsonStream << "  \"RigidBodies\": [{\n";
-		jsonStream << "    \"geometryFile\": \"" << rigidObjPath.toStdString() << "\",\n";
+		jsonStream << "    \"geometryFile\": \"" << rigidObjPaths[0].toStdString() << "\",\n";
 		jsonStream << "    \"translation\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
 		jsonStream << "    \"rotationAxis\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
 		jsonStream << "    \"scale\": [" << 1 << ", " << 1 << ", " << 1 << "],\n";
 		jsonStream << "    \"color\": [" << 0 << ", " << 0 << ", " << 0 << ", " << 1 << "],\n";
 		jsonStream << "    \"isDynamic\": " << "false" << ",\n";
-		jsonStream << "    \"isWall\": " << (isWall ? "true" : "false") << ",\n";
-		jsonStream << "    \"mapInvert\": " << "true" << "\n";
-		jsonStream << "  }],\n";
+		jsonStream << "    \"isWall\": " << (isWalls[0] ? "true" : "false") << ",\n";
+		jsonStream << "    \"mapInvert\": " << (isWalls[0] ? "true" : "false") << ",\n";
+		jsonStream << "		\"mapThickness\": " << 0.0 << ",\n";
+		jsonStream << "		\"mapResolution\": [" << 30 << ", " << 30 << ", " << 30 << "],\n";
+		jsonStream << "  }";
+		if (rigidBodyCount > 1) {
+			for (int i = 1; i < rigidBodyCount; i++) {
+				jsonStream << ",\n";
+				jsonStream << "  {\n";
+				jsonStream << "    \"geometryFile\": \"" << rigidObjPaths[i].toStdString() << "\",\n";
+				jsonStream << "    \"translation\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
+				jsonStream << "    \"rotationAxis\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
+				jsonStream << "    \"scale\": [" << 1 << ", " << 1 << ", " << 1 << "],\n";
+				jsonStream << "    \"color\": [" << 0 << ", " << 0 << ", " << 0 << ", " << 1 << "],\n";
+				jsonStream << "    \"isDynamic\": " << "false" << ",\n";
+				jsonStream << "    \"isWall\": " << (isWalls[i] ? "true" : "false") << ",\n";
+				jsonStream << "    \"mapInvert\": " << (isWalls[i] ? "true" : "false") << ",\n";
+				jsonStream << "		\"mapThickness\": " << 0.0 << ",\n";
+				jsonStream << "		\"mapResolution\": [" << 30 << ", " << 30 << ", " << 30 << "],\n";
+				jsonStream << "  }";
+			}
+		}	
+		jsonStream << "], \n";
 	}
 	catch (const std::exception&)
 	{
@@ -689,15 +741,10 @@ SOP_FUILDSIMULATOR::cookMySop(OP_Context& context)
 			
 
 			// test get detail attribute
-			populateParameters(now);
+			populateParameters(now, inputs);
 
 			std::cout << "my_particles size: " << my_particles->size() << std::endl;
 
-			if (!my_particles->empty()) {
-				// draw particles
-				std::cout << "Drawing particles on cook on frame: " << frame << std::endl;
-				//drawParticles(frame, *my_particles);
-			}
 			
 
 			////////////////////////////////////////////////////////////////////////////////////////////

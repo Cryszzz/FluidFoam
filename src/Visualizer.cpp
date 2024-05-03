@@ -187,7 +187,7 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 
 			fs::path path(inputPath.toStdString());
 
-			path /= "patio/ParticleData_Fuild";
+			path /= "partio/ParticleData_Fluid";
 
 			std::string patioPathStr = path.string();
 			std::replace(patioPathStr.begin(), patioPathStr.end(), '\\', '/');
@@ -196,7 +196,7 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			// Construct the dynamic file path using current frame
 			// check if the file exists
 			UT_String partioFilePath;
-			//partioFilePath.sprintf("%s_%d.bgeo", patioPathStr.c_str(), frameIndex);
+			partioFilePath.sprintf("%s_%d.bgeo", patioPathStr.c_str(), frameIndex);
 			partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.c_str(), frameIndex);
 
 			std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
