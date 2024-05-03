@@ -378,13 +378,13 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 	setString(inputPath, CH_StringMeaning(), inputPathName.getToken(), 0, t);
 	inputPathHandle.set(GA_Offset(0), inputPath);
 
+	GA_RWHandleS stopAtHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "stopAt"));
+	UT_String stopAt = getParameters(stopAtHandle);
+
 
 	GA_RWHandleS particleRadiusHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "particleRadius"));
 	UT_String particleRadius = getParameters(particleRadiusHandle);
-	std::cout << "Attribute set to: " << particleRadius.toStdString() << std::endl;
-	std::cout << "getToken value is:" << ConfigurationNames[1].getToken() << std::endl;
 	setString(particleRadius, CH_StringMeaning(), ConfigurationNames[1].getToken(), 0, t);
-	std::cout << "Attribute set to: " << ConfigurationNames[1].getToken() << " in: " << evalFloat(ConfigurationNames[1].getToken(), 0, t) << std::endl;
 	float particleRadiusValue = evalFloat(ConfigurationNames[1].getToken(), 0, t);
 
 	// populating configuration parameters
@@ -567,6 +567,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 		jsonStream << "{\n";
 		jsonStream << "  \"Configuration\": {\n";
 		jsonStream << "    \"particleRadius\": " << particleRadius << ",\n";
+		jsonStream << "    \"stopAt\": " << stopAt.toFloat() << ",\n";
 		jsonStream << "    \"timeStepSize\": " << timeStepSizeValue << ",\n";
 		jsonStream << "    \"density0\": " << 500 << ",\n";
 		jsonStream << "    \"simulationMethod\": " << 4 << ",\n";
