@@ -241,7 +241,7 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 		static unsigned int m_stopCounter;
 		std::cout << "Simulator initializing ..." << std::endl;
 		std::string clearFluidPath = sop->myOutputPath.toStdString() + "/partio";
-		clearDirectory(clearFluidPath);
+		//clearDirectory(clearFluidPath);
 		std::string cachePath = SOURCE_PATH;
 		cachePath += "/Cache";
 		clearDirectory(cachePath);
