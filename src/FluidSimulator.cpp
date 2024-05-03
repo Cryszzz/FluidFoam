@@ -190,7 +190,9 @@ static PRM_Default MaterialsDefaults[] = {
 	PRM_Default(1.0f)               // Default inverse microinertia for the Micropolar model
 };
 
-static PRM_Name jsonUpdateName("json_update", "Update JSON");
+
+
+
 static PRM_Default jsonUpdateDefault(0);
 static PRM_Name inputPathName("Fluid_obj_path", "Fluid File Path");
 static PRM_Default inputPathDefault(0, "");
@@ -245,7 +247,9 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 		std::string cachePath = SOURCE_PATH;
 		cachePath += "/Cache";
 		clearDirectory(cachePath);
+		std::cout << "\n output patio file path: " << sop->myOutputPath.toStdString() << std::endl;
 
+		sop->populateParameters(now);
 		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, 10.f, "");
 		sop->mySimulator->initSimulation(); // this line is working good
 		// need to divide runSimulation() so I can have the attributes of the particles not in patio format
