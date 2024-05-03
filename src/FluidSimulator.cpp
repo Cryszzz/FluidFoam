@@ -241,7 +241,7 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 		static unsigned int m_stopCounter;
 		std::cout << "Simulator initializing ..." << std::endl;
 		std::string clearFluidPath = sop->myOutputPath.toStdString() + "/partio";
-		//clearDirectory(clearFluidPath);
+		clearDirectory(clearFluidPath);
 		std::string cachePath = SOURCE_PATH;
 		cachePath += "/Cache";
 		clearDirectory(cachePath);
@@ -278,7 +278,7 @@ SOP_FUILDSIMULATOR::myTemplateList[] = {
 
 		// simulation button
 		PRM_Template(PRM_CALLBACK, 1, &simulateButtonName, &simulateButtonNameDefault, nullptr, nullptr, &simulateFluid, nullptr),
-		PRM_Template(PRM_TOGGLE, 1, &jsonUpdateName, &jsonUpdateDefault),
+		//PRM_Template(PRM_TOGGLE, 1, &jsonUpdateName, &jsonUpdateDefault),
 		//PRM_Template(PRM_SWITCHER, 5, &tabName, tabList),
 		PRM_Template(PRM_FILE, 1, &cacheFluidPathName, &cacheFluidPathDefault),
 
@@ -516,6 +516,10 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 	setString(inertiaInverse, CH_StringMeaning(), MaterialsName[10].getToken(), 0, t);
 	float inertiaInverseValue = evalFloat(MaterialsName[10].getToken(), 0, t);
 
+	GA_RWHandleS densityHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "density"));
+	UT_String density = getParameters(densityHandle);
+
+
 	// Handle to manage the file path attribute
 	std::cout << "Getting partio output file path parameters..." << std::endl;
 	evalString(myOutputPath, cacheFluidPathName.getToken(), 0, t);
@@ -572,7 +576,6 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 		jsonStream << "    \"particleRadius\": " << particleRadius << ",\n";
 		jsonStream << "    \"stopAt\": " << stopAt.toFloat() << ",\n";
 		jsonStream << "    \"timeStepSize\": " << timeStepSizeValue << ",\n";
-		jsonStream << "    \"density0\": " << 500 << ",\n";
 		jsonStream << "    \"simulationMethod\": " << 4 << ",\n";
 		jsonStream << "    \"cflMethod\": " << cflMethod << ",\n";
 		jsonStream << "    \"cflFactor\": " << cflFactor << ",\n";
@@ -611,7 +614,8 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 		jsonStream << "    \"vorticityMethod\": " << vorticityMethod << ",\n";
 		jsonStream << "    \"vorticity\": " << vorticity << ",\n";
 		jsonStream << "    \"viscosityOmega\": " << viscosityOmega << ",\n";
-		jsonStream << "    \"inertiaInverse\": " << inertiaInverse << "\n";
+		jsonStream << "    \"inertiaInverse\": " << inertiaInverse << ",\n";
+		jsonStream << "    \"density0\": " << density.toFloat() << "\n";
 		jsonStream << "  }],\n";
 	}
 	catch (const std::exception&)
