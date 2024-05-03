@@ -158,11 +158,12 @@ SOP_RIGIDBODY::cookMySop(OP_Context &context)
         attribRigidBodyFilePath.set(GA_Offset(0), rigidBodyFilePathString.c_str());
         attribRigidBodyFilePath.bumpDataId();
 
-        GA_RWHandleI attribIsWall(gdp->findIntTuple(GA_ATTRIB_DETAIL, wallName.getToken()));
+        GA_RWHandleS attribIsWall(gdp->findStringTuple(GA_ATTRIB_DETAIL, wallName.getToken()));
         if (!attribIsWall.isValid()) {
-            attribIsWall = GA_RWHandleI(gdp->addIntTuple(GA_ATTRIB_DETAIL, wallName.getToken(), 1));
+            attribIsWall = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, wallName.getToken(), 1));
         }
-        attribIsWall.set(GA_Offset(0), isWall ? 1 : 0); // Convert boolean to int
+		std::string isWallString = isWall ? "1" : "0";
+        attribIsWall.set(GA_Offset(0), isWallString.c_str()); // Convert boolean to int
         attribIsWall.bumpDataId();
 
 

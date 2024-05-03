@@ -197,7 +197,7 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 			// check if the file exists
 			UT_String partioFilePath;
 			partioFilePath.sprintf("%s_%d.bgeo", patioPathStr.c_str(), frameIndex);
-			partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.c_str(), frameIndex);
+			//partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.c_str(), frameIndex);
 
 			std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
 			// Get the color attribute name from the parameter

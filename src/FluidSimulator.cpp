@@ -200,6 +200,19 @@ float getStringParamAsFloat(static PRM_Name &name) {
 	return 0.0;
 }
 
+void clearDirectory(const std::string& path) {
+	try {
+		// Create a directory iterator pointing to the start of the directory
+		for (const auto& entry : std::filesystem::directory_iterator(path)) {
+			std::filesystem::remove_all(entry.path());  // Recursively remove each entry
+		}
+		std::cout << "Directory cleared successfully." << std::endl;
+	}
+	catch (const std::filesystem::filesystem_error& e) {
+		std::cerr << "Error clearing directory: " << e.what() << std::endl;
+	}
+}
+
 void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::vector<Vector3r>>>& particles_in_frames) {
 	std::cout << "Drawing Particles in frame" << frame << std::endl;
 	//std::cout << "Number of particles for drawing: " << pos.size() << std::endl;
@@ -229,6 +242,7 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 	{
 		static unsigned int m_stopCounter;
 		std::cout << "Simulator initializing ..." << std::endl;
+		clearDirectory(sop->myOutputPath.toStdString());
 
 		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, 10.f, "");
 		sop->mySimulator->initSimulation(); // this line is working good
@@ -518,9 +532,9 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 	evalString(myOutputPath, cacheFluidPathName.getToken(), 0, t);
 	std::cout << "Partio output file path: " << myOutputPath.toStdString() << std::endl;
 	UT_String paramName(inputPathName.getToken());
-	std::cout << "Parameter name: " << paramName.toStdString() << std::endl;
+	//std::cout << "Parameter name: " << paramName.toStdString() << std::endl;
 	GA_RWHandleS attrib(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
-	std::cout << "Attribute handle is valid: " << attrib.isValid() << std::endl;
+	//std::cout << "Attribute handle is valid: " << attrib.isValid() << std::endl;
 
 	if (!attrib.isValid()) {
 		attrib = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
@@ -535,20 +549,24 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 	// loop thru inputs to get the rigid body parameters
 	int rigidBodyCount = 0;
 	std::vector<UT_String> rigidObjPaths;
-	std::vector<UT_String> isWalls;
+	std::vector<int> isWalls;
 	std::cout << "Getting rigid body parameters..." << std::endl;
 	for (int i = 1; i < 11; i++) {
 		const GU_Detail* inputGdp = inputGeo(i);
 		if (!inputGdp) continue; // Check if input exists
 		rigidBodyCount++;
+		// get the isWall attribute
+		GA_ROHandleS isWallHandle(inputGdp->findStringTuple(GA_ATTRIB_DETAIL, "is_Wall"));
+		int isWall = getParameters(isWallHandle).toInt();
+		std::cout << "isWall value: " << isWall << std::endl;
+		//int isWallValue = isWall.toInt();
+		isWalls.push_back(isWall);
 		// get the rigid body path
 		GA_ROHandleS rigidObjPathHandle(inputGdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
 		UT_String rigidObjPath = getParameters(rigidObjPathHandle);
 		rigidObjPaths.push_back(rigidObjPath);
-		// get the isWall attribute
-		GA_ROHandleS isWallHandle(inputGdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
-		UT_String isWall = getParameters(isWallHandle);
-		isWalls.push_back(isWall);
+		
+		//std::cout << "isWall value: " << isWallValue << std::endl;
 	}
 	std::cout << "Number of rigid bodies: " << rigidBodyCount << std::endl;
 	
@@ -642,7 +660,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 		jsonStream << "    \"isWall\": " << (isWalls[0] ? "true" : "false") << ",\n";
 		jsonStream << "    \"mapInvert\": " << (isWalls[0] ? "true" : "false") << ",\n";
 		jsonStream << "		\"mapThickness\": " << 0.0 << ",\n";
-		jsonStream << "		\"mapResolution\": [" << 30 << ", " << 30 << ", " << 30 << "],\n";
+		jsonStream << "		\"mapResolution\": [" << 30 << ", " << 30 << ", " << 30 << "]\n";
 		jsonStream << "  }";
 		if (rigidBodyCount > 1) {
 			for (int i = 1; i < rigidBodyCount; i++) {
@@ -657,7 +675,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 				jsonStream << "    \"isWall\": " << (isWalls[i] ? "true" : "false") << ",\n";
 				jsonStream << "    \"mapInvert\": " << (isWalls[i] ? "true" : "false") << ",\n";
 				jsonStream << "		\"mapThickness\": " << 0.0 << ",\n";
-				jsonStream << "		\"mapResolution\": [" << 30 << ", " << 30 << ", " << 30 << "],\n";
+				jsonStream << "		\"mapResolution\": [" << 30 << ", " << 30 << ", " << 30 << "]\n";
 				jsonStream << "  }";
 			}
 		}	
@@ -677,7 +695,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 		jsonStream << "    \"translation\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
 		jsonStream << "    \"rotationAxis\": [" << 0 << ", " << 0 << ", " << 0 << "],\n";
 		jsonStream << "    \"rotationAngle\": " << 0 <<  ",\n";
-		jsonStream << "    \"scale\": [" << 0.5 << ", " << 0.5 << ", " << 0.5 << "]\n";
+		jsonStream << "    \"scale\": [" << 1.0 << ", " << 1.0 << ", " << 1.0 << "]\n";
 		jsonStream << "  }]\n";
 		jsonStream << "}\n";
 	}
