@@ -242,6 +242,9 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 		std::cout << "Simulator initializing ..." << std::endl;
 		std::string clearFluidPath = sop->myOutputPath.toStdString() + "/partio";
 		clearDirectory(clearFluidPath);
+		std::string cachePath = SOURCE_PATH;
+		cachePath += "/Cache";
+		clearDirectory(cachePath);
 
 		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, 10.f, "");
 		sop->mySimulator->initSimulation(); // this line is working good

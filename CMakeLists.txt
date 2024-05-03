@@ -69,7 +69,8 @@ include(DataCopyTargets)
 add_subdirectory(Simulator)
 add_subdirectory(FoamGenerator)
 
-add_definitions(-DSOURCE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/bin/FoamGenerator.exe")
+add_definitions(-DEXE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/bin/FoamGenerator.exe")
+add_definitions(-DSOURCE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 
 message(STATUS "Checking directory: ${PROJECT_SOURCE_DIR}/data/shaders")
 # Define source and header files

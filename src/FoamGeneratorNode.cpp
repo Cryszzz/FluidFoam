@@ -280,7 +280,7 @@ SOP_FOAMGENERATOR::cookMySop(OP_Context &context)
     //UT_String foamType;
     //evalString(foamType, sopStringName.getToken(), 0, now);
 
-    runCommand = SOURCE_PATH;
+    runCommand = EXE_PATH;
     runCommand += " " + appendString("-s", startFrame) + appendString("-e", endFrame) + appendString("--lifetime", lifeMin + "," + lifeMax) + appendString("-r", radius) + appendString("-b", buoyancy) + appendString("-d", drag) + appendString("-t", timeStep) + appendString("-f", foamScale);
     if(split){
         runCommand+="--splittypes ";
