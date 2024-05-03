@@ -29,6 +29,23 @@ using namespace HDK_Sample;
 using namespace Utilities;
 namespace fs = std::filesystem;
 
+float getStringParamAsFloat(static PRM_Name& name) {
+	//OP_Parameters::evalFloat(names[0].getToken(), 0, t)
+	return 0.0;
+}
+
+void clearDirectory(const std::string& path) {
+	try {
+		// Create a directory iterator pointing to the start of the directory
+		for (const auto& entry : std::filesystem::directory_iterator(path)) {
+			std::filesystem::remove_all(entry.path());  // Recursively remove each entry
+		}
+		std::cout << "Directory cleared successfully." << std::endl;
+	}
+	catch (const std::filesystem::filesystem_error& e) {
+		std::cerr << "Error clearing directory: " << e.what() << std::endl;
+	}
+}
 
 void initFluidSimulator(SPH::SimulatorBase& obj,
 	std::string sceneFile = "data/Scenes/DoubleDamBreak.json", 
@@ -194,25 +211,6 @@ static PRM_Default inputRigidObjPathDefault(0, "");
 
 // output path parameters
 
-
-float getStringParamAsFloat(static PRM_Name &name) {
-	//OP_Parameters::evalFloat(names[0].getToken(), 0, t)
-	return 0.0;
-}
-
-void clearDirectory(const std::string& path) {
-	try {
-		// Create a directory iterator pointing to the start of the directory
-		for (const auto& entry : std::filesystem::directory_iterator(path)) {
-			std::filesystem::remove_all(entry.path());  // Recursively remove each entry
-		}
-		std::cout << "Directory cleared successfully." << std::endl;
-	}
-	catch (const std::filesystem::filesystem_error& e) {
-		std::cerr << "Error clearing directory: " << e.what() << std::endl;
-	}
-}
-
 void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::vector<Vector3r>>>& particles_in_frames) {
 	std::cout << "Drawing Particles in frame" << frame << std::endl;
 	//std::cout << "Number of particles for drawing: " << pos.size() << std::endl;
@@ -242,21 +240,15 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 	{
 		static unsigned int m_stopCounter;
 		std::cout << "Simulator initializing ..." << std::endl;
-		clearDirectory(sop->myOutputPath.toStdString());
+		std::string clearFluidPath = sop->myOutputPath.toStdString() + "/partio";
+		clearDirectory(clearFluidPath);
 
 		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, 10.f, "");
 		sop->mySimulator->initSimulation(); // this line is working good
 		// need to divide runSimulation() so I can have the attributes of the particles not in patio format
 		// checked the runSimulation() function in SimulatorBase.cpp and all necessary member functions are not private
-		if (!sop->my_pos || !sop->my_vel || !sop->my_angVel || !sop->my_particles) {
-			// Handle the uninitialized case
-			std::cerr << "One or more vectors are not initialized properly.\n";
-			return 0;
-		}
 
-		//myRunSimulation(*sop->mySimulator, *sop->my_particles);
 		// activate patio exporter
-		//std::string patioExporterName = sop->mySimulator->getParticleExporters;
 		sop->mySimulator->activateExporter("Partio Exporter", true);
 		sop->mySimulator->runSimulation();
 
@@ -340,13 +332,7 @@ SOP_FUILDSIMULATOR::SOP_FUILDSIMULATOR(OP_Network* net, const char* name, OP_Ope
 	: SOP_Node(net, name, op)
 {
 	myCurrPoint = -1;	// To prevent garbage values from being returned
-	mySim = std::unique_ptr<SPH::Simulation>(new SPH::Simulation());
-	mySceneLoader = std::unique_ptr<Utilities::SceneLoader>(new Utilities::SceneLoader());
 	mySimulator = std::unique_ptr<SPH::SimulatorBase>(new SPH::SimulatorBase());
-	my_pos = std::make_unique<std::vector<Vector3r>>();
-	my_vel = std::make_unique<std::vector<Vector3r>>();
-	my_angVel = std::make_unique<std::vector<Vector3r>>();
-	my_particles = std::make_unique<std::vector<std::vector<std::vector<Vector3r>>>>();
 	fs::path patio_path = fs::absolute("patrio_output/");
 	myOutputPath = patio_path.string();
 	
@@ -532,9 +518,7 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 	evalString(myOutputPath, cacheFluidPathName.getToken(), 0, t);
 	std::cout << "Partio output file path: " << myOutputPath.toStdString() << std::endl;
 	UT_String paramName(inputPathName.getToken());
-	//std::cout << "Parameter name: " << paramName.toStdString() << std::endl;
 	GA_RWHandleS attrib(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
-	//std::cout << "Attribute handle is valid: " << attrib.isValid() << std::endl;
 
 	if (!attrib.isValid()) {
 		attrib = GA_RWHandleS(gdp->addStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path", 1));
@@ -565,30 +549,15 @@ void SOP_FUILDSIMULATOR::populateParameters(fpreal t, OP_AutoLockInputs inputs) 
 		GA_ROHandleS rigidObjPathHandle(inputGdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
 		UT_String rigidObjPath = getParameters(rigidObjPathHandle);
 		rigidObjPaths.push_back(rigidObjPath);
-		
-		//std::cout << "isWall value: " << isWallValue << std::endl;
 	}
 	std::cout << "Number of rigid bodies: " << rigidBodyCount << std::endl;
-	
-
-	// populate rigid body parameters
-	//GA_RWHandleS wallHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "isWall"));
-	//UT_String isWall = getParameters(wallHandle);
-	//setString(isWall, CH_StringMeaning(), wallName.getToken(), 0, t);
-	//float isWallValue = evalFloat(wallName.getToken(), 0, t);
-
-	//GA_RWHandleS rigidObjPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "Rigid_obj_path"));
-	//UT_String rigidObjPath = getParameters(rigidObjPathHandle);
-	//setString(rigidObjPath, CH_StringMeaning(), inputRigidObjPathName.getToken(), 0, t);
-	
-	
-
 
 
 	// write to json file
 	fs::path jsonFilePath = fs::absolute("testParametersForSimulator.json");
 
 	mySceneFile = jsonFilePath.string();
+	std::cout << "Scene file path: " << mySceneFile << std::endl;
 
 	std::ostringstream jsonStream;
 	jsonStream << std::fixed; // Ensures floating point values are not written in scientific notation.
@@ -761,10 +730,7 @@ SOP_FUILDSIMULATOR::cookMySop(OP_Context& context)
 			// test get detail attribute
 			populateParameters(now, inputs);
 
-			std::cout << "my_particles size: " << my_particles->size() << std::endl;
-
-			
-
+		
 			////////////////////////////////////////////////////////////////////////////////////////////
 
 			// Highlight the star which we have just generated.  This routine
