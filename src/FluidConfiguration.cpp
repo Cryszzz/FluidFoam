@@ -67,7 +67,7 @@ static PRM_Default ConfigurationDefaults[] = {
 
 static PRM_Default gravitationDefaults[] = { PRM_Default(0), PRM_Default(-9.81f), PRM_Default(0) };
 static PRM_Default initialVelocityDefaults[] = { PRM_Default(0), PRM_Default(0.0f), PRM_Default(0.0) };
-static PRM_Default initialAngularVelocityDefaults[] = { PRM_Default(0), PRM_Default(-9.81f), PRM_Default(0) };
+static PRM_Default initialAngularVelocityDefaults[] = { PRM_Default(0), PRM_Default(0.0f), PRM_Default(0) };
 
 static PRM_Name MaterialsName[] = {
     PRM_Name("viscosityMethod", "Viscosity Method"),  // Method for viscosity computation

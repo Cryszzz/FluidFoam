@@ -243,11 +243,12 @@ void SOP_FUILDSIMULATOR::drawParticles(int frame, std::vector<std::vector<std::v
 		static unsigned int m_stopCounter;
 		std::cout << "Simulator initializing ..." << std::endl;
 		std::string clearFluidPath = sop->myOutputPath.toStdString() + "/partio";
-		clearDirectory(clearFluidPath);
-		std::string cachePath = SOURCE_PATH;
-		cachePath += "/Cache";
-		clearDirectory(cachePath);
-		std::cout << "\n output patio file path: " << sop->myOutputPath.toStdString() << std::endl;
+		std::cout<<clearFluidPath<<std::endl;
+		//clearDirectory(clearFluidPath);
+		std::filesystem::path cwd = std::filesystem::current_path()/"Cache";
+		std::cout<<cwd.string()<<std::endl;
+		//clearDirectory(cwd.string());
+
 
 		sop->populateParameters(now);
 		initFluidSimulator(*sop->mySimulator, sop->mySceneFile, "SPlisHSPlasH", true, "", sop->myOutputPath.toStdString(), false, false, 10.f, "");
