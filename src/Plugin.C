@@ -43,7 +43,7 @@ newSopOperator(OP_OperatorTable *table)
 		"FluidSimulator",			// UI name
 		SOP_FUILDSIMULATOR::myConstructor,	// How to build the SOP
 		SOP_FUILDSIMULATOR::myTemplateList,	// My parameters
-		3,				// Min # of sources
+		2,				// Min # of sources
 		OP_MULTI_INPUT_MAX,				// Max # of sources
 		SOP_FUILDSIMULATOR::myVariables,	// Local variables
 		OP_FLAG_GENERATOR);

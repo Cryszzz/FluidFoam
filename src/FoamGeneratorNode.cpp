@@ -78,7 +78,7 @@ static PRM_Default voDefaults[] = { PRM_Default(5), PRM_Default(20) };
 
 static PRM_Name keLimitsName("ke_limits", "Kinetic Energy limits (min/max)");
 static PRM_Default keDefaults[] = { PRM_Default(5), PRM_Default(50) };
-static PRM_Conditional disableCondition("generate == 0",PRM_CONDTYPE_HIDE);
+static PRM_Conditional disableCondition("{ generate == 0 }");
 
 static PRM_Name splitGeneratorsName("splitgenerators", "Output different foam files depending on which potential generated the foam");
 static PRM_Name trappedAirGeneratorName("splitTrappedAir", "Trapped Air Generator");
@@ -133,12 +133,12 @@ SOP_FOAMGENERATOR::myTemplateList[] = {
     PRM_Template(PRM_FLT, 2, &frameLimitsName, frameDefaults), // Frame limits (start/end)
 
     PRM_Template(PRM_FLT, 1, &taFactorName, &taFactorDefault,nullptr, nullptr,nullptr, nullptr,1,nullptr,&disableCondition), // Trapped air factor
-    PRM_Template(PRM_FLT, 2, &taLimitsName, taDefaults), // Trapped air limits (min/max)
-    PRM_Template(PRM_FLT, 1, &wcFactorName, &wcFactorDefault), // Wave crest factor
-    PRM_Template(PRM_FLT, 2, &wcLimitsName, wcDefaults), // Wave crest limits (min/max)
-    PRM_Template(PRM_FLT, 1, &voFactorName, &voFactorDefault), // Vorticity factor
-    PRM_Template(PRM_FLT, 2, &voLimitsName, voDefaults), // Vorticity limits (min/max)
-    PRM_Template(PRM_FLT, 2, &keLimitsName, keDefaults),
+    PRM_Template(PRM_FLT, 2, &taLimitsName, taDefaults,nullptr, nullptr,nullptr, nullptr,1,nullptr,&disableCondition), // Trapped air limits (min/max)
+    PRM_Template(PRM_FLT, 1, &wcFactorName, &wcFactorDefault,nullptr, nullptr,nullptr, nullptr,1,nullptr,&disableCondition), // Wave crest factor
+    PRM_Template(PRM_FLT, 2, &wcLimitsName, wcDefaults,nullptr, nullptr,nullptr, nullptr,1,nullptr,&disableCondition), // Wave crest limits (min/max)
+    PRM_Template(PRM_FLT, 1, &voFactorName, &voFactorDefault,nullptr, nullptr,nullptr, nullptr,1,nullptr,&disableCondition), // Vorticity factor
+    PRM_Template(PRM_FLT, 2, &voLimitsName, voDefaults,nullptr, nullptr,nullptr, nullptr,1,nullptr,&disableCondition), // Vorticity limits (min/max)
+    PRM_Template(PRM_FLT, 2, &keLimitsName, keDefaults,nullptr, nullptr,nullptr, nullptr,1,nullptr,&disableCondition),
 
     //PRM_Template(PRM_STRING, 1, &sopStringName,  0, &sopStringMenu),
 	PRM_Template() // Sentinel

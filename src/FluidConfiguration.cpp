@@ -30,6 +30,34 @@ static PRM_Default  tabList[] = {
 	PRM_Default(0, "Other")
 };
 
+static PRM_Name CFLMethodList[] = {
+	PRM_Name("0", "No adaptive time stepping"),
+	PRM_Name("1", "Use CFL condition"),
+	PRM_Name("2", "Use CFL condition and consider number of pressure solver iterations"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList CFLMethodMenu(PRM_CHOICELIST_SINGLE,CFLMethodList);
+
+static PRM_Name viscosityList[] = {
+	PRM_Name("0", "None"),
+	PRM_Name("1", "Standard"),
+	PRM_Name("2", "Bender and Koschier 2017"),
+	PRM_Name("3", "Peer et al. 2015"),
+	PRM_Name("4", "Peer et al. 2016"),
+	PRM_Name("5", "Takahashi et al. 2015 (improved)"),
+	PRM_Name("6", "Weiler et al. 2018"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList viscosityMenu(PRM_CHOICELIST_SINGLE,viscosityList);
+
+static PRM_Name vorticityList[] = {
+	PRM_Name("0", "None"),
+	PRM_Name("1", "Micropolar model"),
+	PRM_Name("2", "Vorticity confinement"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList vorticityMenu(PRM_CHOICELIST_SINGLE,vorticityList);
+
 static PRM_Name ConfigurationNames[] = {
     PRM_Name("timeStepSize", "Initial Time Step Size"),
 	PRM_Name("stopAt", "Stop At Time"),
@@ -134,20 +162,20 @@ SOP_FLUIDCONFIGURATION::myTemplateList[] = {
     PRM_Template(PRM_TOGGLE, 1, &ConfigurationNames[7], &ConfigurationDefaults[7]), // Enable Divergence Solver
     PRM_Template(PRM_INT, 1, &ConfigurationNames[8], &ConfigurationDefaults[8]), // Max Iterations of Divergence Solver
     PRM_Template(PRM_FLT, 1, &ConfigurationNames[9], &ConfigurationDefaults[9]), // Max Divergence Error
-    PRM_Template(PRM_ORD, 1, &ConfigurationNames[10], &ConfigurationDefaults[10]), // CFL Method
+    PRM_Template(PRM_ORD, 1, &ConfigurationNames[10], &ConfigurationDefaults[10],  &CFLMethodMenu), // CFL Method
     PRM_Template(PRM_FLT, 1, &ConfigurationNames[11], &ConfigurationDefaults[11]), // CFL Factor
     PRM_Template(PRM_FLT, 1, &ConfigurationNames[12], &ConfigurationDefaults[12]), // CFL Min Time Step Size
     PRM_Template(PRM_FLT, 1, &ConfigurationNames[13], &ConfigurationDefaults[13]), // CFL Max Time Step Size
 
     // Materials tab
-    PRM_Template(PRM_ORD, 1, &MaterialsName[0], &MaterialsDefaults[0]), // Viscosity Method
+    PRM_Template(PRM_ORD, 1, &MaterialsName[0], &MaterialsDefaults[0],&viscosityMenu), // Viscosity Method
     PRM_Template(PRM_FLT, 1, &MaterialsName[1], &MaterialsDefaults[1]), // Viscosity
     PRM_Template(PRM_INT, 1, &MaterialsName[2], &MaterialsDefaults[2]), // Max Viscosity Iterations
     PRM_Template(PRM_FLT, 1, &MaterialsName[3], &MaterialsDefaults[3]), // Max Viscosity Error
     PRM_Template(PRM_INT, 1, &MaterialsName[4], &MaterialsDefaults[4]), // Max Iterations for Vorticity Diffusion
     PRM_Template(PRM_FLT, 1, &MaterialsName[5], &MaterialsDefaults[5]), // Max Error for Vorticity Diffusion
     PRM_Template(PRM_FLT, 1, &MaterialsName[6], &MaterialsDefaults[6]), // Boundary Viscosity
-    PRM_Template(PRM_ORD, 1, &MaterialsName[7], &MaterialsDefaults[7]), // Vorticity Method
+    PRM_Template(PRM_ORD, 1, &MaterialsName[7], &MaterialsDefaults[7],&vorticityMenu), // Vorticity Method
     PRM_Template(PRM_FLT, 1, &MaterialsName[8], &MaterialsDefaults[8]), // Vorticity
     PRM_Template(PRM_FLT, 1, &MaterialsName[9], &MaterialsDefaults[9]), // Viscosity Omega
     PRM_Template(PRM_FLT, 1, &MaterialsName[10], &MaterialsDefaults[10]), // Inertia Inverse
