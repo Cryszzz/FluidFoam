@@ -9,6 +9,7 @@
 #include <CH/CH_LocalVariable.h>
 #include <PRM/PRM_Include.h>
 #include <PRM/PRM_SpareData.h>
+#include <OP/OP_AutoLockInputs.h>
 #include <UT/UT_Map.h>
 #include <GU/GU_Detail.h>
 #include <fstream>
@@ -32,22 +33,34 @@ static PRM_Name maxVal("maxVal", "Max Value");
 static PRM_Name frameIndex("frameIndex", "Frame Index");
 
 // Declare parameters' default value for the SOP
-static PRM_Default partioFileDefault(0.0, "D:/PennCGGT/CIS6600/autoringTool/outputs/partio/ParticleData_Fluid");
+static PRM_Default partioFileDefault(0.0, "");
 static PRM_Default colorAttrNameDefault(0.0, "velocity");
 static PRM_Default rotationAttrNameDefault(0.0, "v");
 static PRM_Default minValDefault(0.0);
 static PRM_Default maxValDefault(1.0);
 static PRM_Default frameIndexDefault(1.0);
 
+static PRM_Name drawingModeName("drawingMode", "Drawing Mode");
+static PRM_Default drawingModeDefault(0); // Default to lines
+static PRM_Name drawingModeList[] = {
+	PRM_Name("0", "FluidParticles"),
+	PRM_Name("1", "Foam_no_split"),
+	PRM_Name("2", "Foam_split_Bubbles"),
+	PRM_Name("3", "Foam_split_Spray"),
+	PRM_Name("4", "Foam_split_Foam"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList drawingModeMenu(PRM_CHOICELIST_SINGLE, drawingModeList);
 
 PRM_Template
 SOP_VISUALIZER::myTemplateList[] = {
-	{PRM_Template(PRM_FILE, 1, &partioFile, &partioFileDefault, 0)},
+	PRM_Template(PRM_ORD, 1, &drawingModeName, &drawingModeDefault, &drawingModeMenu),
+	/*{PRM_Template(PRM_FILE, 1, &partioFile, &partioFileDefault, 0)},
 	{PRM_Template(PRM_STRING, 1, &colorAttrName, &colorAttrNameDefault, 0)},
 	{PRM_Template(PRM_STRING, 1, &rotationAttrName, &rotationAttrNameDefault, 0)},
 	{PRM_Template(PRM_FLT,	PRM_Template::PRM_EXPORT_MIN, 1, &minVal, &minValDefault, 0)},
 	{PRM_Template(PRM_FLT, PRM_Template::PRM_EXPORT_MIN, 1, &maxVal, &maxValDefault, 0)},
-	{PRM_Template(PRM_FLT, PRM_Template::PRM_EXPORT_MIN, 1, &frameIndex, &frameIndexDefault, 0)},
+	{PRM_Template(PRM_FLT, PRM_Template::PRM_EXPORT_MIN, 1, &frameIndex, &frameIndexDefault, 0)},*/
 
 
 	PRM_Template()
@@ -118,6 +131,25 @@ SOP_VISUALIZER::disableParms()
 	return changes;
 }
 
+// get parameter from the handle
+UT_String SOP_VISUALIZER::getParameters(GA_ROHandleS paraHandle) {
+	// get parameters from the input from last ndoe
+	if (paraHandle.isValid()) {
+		UT_String value;
+		value = paraHandle.get(GA_Offset(0));
+		if (value) {
+			std::cout << "Retrieved attribute value: " << value.toStdString() << std::endl;
+			return value;
+		}
+		else {
+			std::cout << "Failed to get attribute value." << std::endl;
+		}
+	}
+	else {
+		std::cout << "Attribute handle is not valid." << std::endl;
+	}
+}
+
 OP_ERROR
 SOP_VISUALIZER::cookMySop(OP_Context& context)
 {
@@ -131,41 +163,9 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 	std::cout << "Current frame: " << currentFrame << std::endl;
 	// Get the frame index from the parameter
 	int frameIndex = currentFrame;
+	int read_type=evalInt("drawingMode", 0, now);
 
-	// Get the file path from the parameter
-	UT_String baseFilePath;
-	evalString(baseFilePath, "partioFile", 0, now);
-
-	// Construct the dynamic file path using current frame
-	UT_String partioFilePath;
-	partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.toStdString().c_str(), frameIndex);
-
-	std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
-	// Get the color attribute name from the parameter
-	UT_String colorAttrName;
-	evalString(colorAttrName, "colorAttrName", 0, now);
-
-	// Get the rotation attribute name from the parameter
-	UT_String rotationAttrName;
-	evalString(rotationAttrName, "rotationAttrName", 0, now);
-
-	// Get the min value from the parameter
-	float minVal;
-	minVal = MINVAL(now);
-
-	// Get the max value from the parameter
-	float maxVal;
-	maxVal = MAXVAL(now);
-
-	m_partioData = Partio::create();
 	
-	myLastPartioFilePath = partioFilePath;
-	if (!readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
-	{
-		addError(SOP_ERR_INVALID_SRC, "Failed to read partio file");
-		return error();
-
-	}
 
 	// Check to see that there hasn't been a critical error in cooking the SOP.
 	if (error() < UT_ERROR_ABORT)
@@ -176,62 +176,113 @@ SOP_VISUALIZER::cookMySop(OP_Context& context)
 
 		gdp->clearAndDestroy();
 
+		OP_AutoLockInputs inputs(this);
+		if (inputs.lock(context) >= UT_ERROR_ABORT)
+			return error();
+
+		// Duplicate our incoming geometry with the hint that we only
+		// altered points.  Thus, if our input was unchanged, we can
+	// easily roll back our changes by copying point values.
+		duplicatePointSource(0, context);
+
 		// Start the interrupt server
 		if (boss->opStart("Building"))
 		{
-			float sphereRadius = 0.1f;
-			// Create a sphere for each particle
-			////// render the particles using the partio data and houdini particles attributes //////
-			unsigned int numParticles = m_partioData->numParticles();
-			std::cout << "Number of particles: " << numParticles << std::endl;
-			//UTdebugFormat("Number of attributes: {}", m_partioData->numAttributes());
-			for (unsigned int i = 0; i < numParticles; i++) {
-				UT_Vector3 posH;
-				if (m_posAttr.attributeIndex != 0xffffffff) {
-					const float* pos = m_partioData->data<float>(m_posAttr, i);   // This line is causing the error
-					posH = UT_Vector3(pos[0], pos[1], pos[2]);
-				}
+			// Get the file path from the parameter
+			UT_String baseFilePath;
+			evalString(baseFilePath, "partioFile", 0, now);
 
-				GA_Offset ptoff = gdp->appendPointOffset();
-				
-				gdp->setPos3(ptoff, posH);
-				//std::cout << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-				//Create a sphere at each particle position
+			// get the patio file path from the detail list
+			GA_RWHandleS inputPathHandle(gdp->findStringTuple(GA_ATTRIB_DETAIL, "fluid_patio_file_path"));
+			UT_String inputPath = getParameters(inputPathHandle);
+			///setString(inputPath, CH_StringMeaning(), inputPathName.getToken(), 0, now);
+			inputPathHandle.set(GA_Offset(0), inputPath);
 
+			fs::path path(inputPath.toStdString());
+			
+			std::string suffix="";
+			switch (read_type)
+			{
+			case 0:
+				path /= "partio/ParticleData_Fluid";
+				break;
+			
+			case 1:
+				path /= "foam/foam";
+				break;
+			
+			case 2:
+				path /= "foam/foam";
+				suffix="_foam";
+				break;
 
-
-
-
-				//// Assuming that m_velAttr is a valid velocity attribute from Partio
-				//if (m_velAttr.attributeIndex != -1) {
-				//	const float* vel = m_partioData->data<float>(m_velAttr, i);
-				//	// Set velocity attribute for the point
-				//	GA_RWHandleV3 velocityHandle(gdp->findAttribute(GA_ATTRIB_POINT, "v"));
-				//	if (!velocityHandle.isValid()) {
-				//		// Create the velocity attribute if it doesn't exist
-				//		std::cout << "velocity attribute not found" << std::endl;
-				//		//velocityHandle = GA_RWHandleV3(gdp->addFloatTuple(GA_ATTRIB_POINT, "v", 3));
-				//	}
-				//	velocityHandle.set(ptoff, UT_Vector3(vel[0], vel[1], vel[2]));
-				//	//std::cout << "vel: " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
-				//}
-
-				//// Assuming that m_idAttr is a valid ID attribute from Partio
-				//if (m_idAttr.attributeIndex != -1) {
-				//	const int* id = m_partioData->data<int>(m_idAttr, i);
-				//	// Set id attribute for the point
-				//	GA_RWHandleI idHandle(gdp->findAttribute(GA_ATTRIB_POINT, "id"));
-				//	if (!idHandle.isValid()) {
-				//		// Create the ID attribute if it doesn't exist
-				//		std:: cout << "id attribute not found" << std::endl;
-				//		//idHandle = GA_RWHandleI(gdp->addIntTuple(GA_ATTRIB_POINT, "id", 1));
-				//	}
-				//	idHandle.set(ptoff, *id);
-				//	//std::cout << "id: " << *id << std::endl;
-				//}
-				////const float* color = m_partioData->data<float>(m_userColorAttr, i);
-
+			case 3:
+				path /= "foam/foam";
+				suffix="_spray";
+				break;
+			
+			case 4:
+				path /= "foam/foam";
+				suffix="_bubbles";
+				break;
+			
+			default:
+				break;
 			}
+
+			std::string patioPathStr = path.string();
+			std::replace(patioPathStr.begin(), patioPathStr.end(), '\\', '/');
+
+
+			// Construct the dynamic file path using current frame
+			// check if the file exists
+			UT_String partioFilePath;
+			partioFilePath.sprintf("%s_%d%s.bgeo", patioPathStr.c_str(), frameIndex,suffix.c_str());
+			//partioFilePath.sprintf("%s_%d.bgeo", baseFilePath.c_str(), frameIndex);
+
+			std::cout << "Partio file path: " << partioFilePath.toStdString() << std::endl;
+			// Get the color attribute name from the parameter
+			UT_String colorAttrName;
+			evalString(colorAttrName, "colorAttrName", 0, now);
+
+			// Get the rotation attribute name from the parameter
+			UT_String rotationAttrName;
+			evalString(rotationAttrName, "rotationAttrName", 0, now);
+
+			// Get the min value from the parameter
+			float minVal;
+			minVal = MINVAL(now);
+
+			// Get the max value from the parameter
+			float maxVal;
+			maxVal = MAXVAL(now);
+
+			m_partioData = Partio::create();
+
+			myLastPartioFilePath = partioFilePath;
+			if (readParticles(myLastPartioFilePath.toStdString(), colorAttrName.toStdString(), rotationAttrName.toStdString()))
+			{
+				// Create a sphere for each particle
+				////// render the particles using the partio data and houdini particles attributes //////
+				unsigned int numParticles = m_partioData->numParticles();
+				std::cout << "Number of particles: " << numParticles << std::endl;
+				//UTdebugFormat("Number of attributes: {}", m_partioData->numAttributes());
+				for (unsigned int i = 0; i < numParticles; i++) {
+					UT_Vector3 posH;
+					if (m_posAttr.attributeIndex != 0xffffffff) {
+						const float* pos = m_partioData->data<float>(m_posAttr, i);   // This line is causing the error
+						posH = UT_Vector3(pos[0], pos[1], pos[2]);
+					}
+
+					GA_Offset ptoff = gdp->appendPointOffset();
+
+					gdp->setPos3(ptoff, posH);
+					//std::cout << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+
+				}
+			}
+			
+			
 
 
 			////////////////////////////////////////////////////////////////////////////////////////////

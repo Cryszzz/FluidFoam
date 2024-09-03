@@ -4,11 +4,11 @@
 //#include <GEO/GEO_Point.h>
 //
 #include <SOP/SOP_Node.h>
+#include <OP/OP_AutoLockInputs.h>
 #include "SPlisHSPlasH/Simulation.h"
 #include "SPlisHSPlasH/Utilities/SceneLoader.h"
-#include "Utilities/Logger.h"
-#include "Utilities/Timing.h"
-#include "Utilities/Counting.h"
+#include "Simulator/SimulatorBase.h"
+
 
 
 namespace HDK_Sample {
@@ -26,13 +26,30 @@ namespace HDK_Sample {
         static CH_LocalVariable	 myVariables[];
         bool lastCheckboxState = false;
 
-        void populateParameters(fpreal t);
+        void populateParameters(fpreal t, OP_AutoLockInputs inputs);
         UT_String getParameters(GA_ROHandleS paraHandle);
         static int simulateFluid(void* data, int index, float time, const PRM_Template* tplate);
+		void drawParticles(int frame, std::vector<std::vector<std::vector<Vector3r>>>& particles);
 
 
         std::unique_ptr<SPH::Simulation> mySim;
         std::unique_ptr<Utilities::SceneLoader> mySceneLoader;
+		std::unique_ptr<SPH::SimulatorBase> mySimulator;
+
+		
+        std::string mySceneFile;
+        std::unique_ptr<std::vector<Vector3r>> my_pos;
+        std::unique_ptr<std::vector<Vector3r>> my_vel;
+        std::unique_ptr<std::vector<Vector3r>> my_angVel;
+		// a vessel to store particle info in each frame
+		// usd unique_ptr to avoid memory leak
+		// a vector for frame, a vector for particles in each frame, a vector for Vector3r attributes in each particle
+		std::unique_ptr<std::vector<std::vector<std::vector<Vector3r>>>> my_particles;
+
+        // output patio file path as parameter in detail string
+        UT_String myOutputPath;
+        float my_stopAt;
+
 
         fpreal lastCookTime;
 

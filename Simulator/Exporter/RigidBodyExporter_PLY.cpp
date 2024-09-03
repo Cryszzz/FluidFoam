@@ -33,6 +33,15 @@ void RigidBodyExporter_PLY::step(const unsigned int frame)
 	writeRigidBodies(frame);
 }
 
+void RigidBodyExporter_PLY::myStep(const unsigned int frame)
+{
+	// check if the exporter is active
+	if (!m_active)
+		return;
+
+	writeRigidBodies(frame);
+}
+
 void RigidBodyExporter_PLY::reset()
 {
 	m_isFirstFrame = true;

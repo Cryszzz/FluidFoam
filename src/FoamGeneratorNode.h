@@ -18,10 +18,14 @@ public:
     /// Stores the description of the interface of the SOP in Houdini.
     /// Each parm template refers to a parameter.
     static PRM_Template		 myTemplateList[];
-
+    static int simulateFoam(void* data, int index, float time, const PRM_Template* tplate);
     /// This optional data stores the list of local variables.
     static CH_LocalVariable	 myVariables[];
     bool lastCheckboxState = false;
+    UT_String getParameters(GA_ROHandleS paraHandle);
+    std::string runCommand;
+    std::string cleanpath;
+    std::unordered_map<std::string, std::any> params;
 
 protected:
 
@@ -30,7 +34,7 @@ protected:
 
     /// Disable parameters according to other parameters.
     virtual unsigned		 disableParms();
-    std::unordered_map<std::string, std::any> params;
+    
 
     /// cookMySop does the actual work of the SOP computing, in this
     /// case, a LSYSTEM
@@ -69,8 +73,10 @@ private:
     /// Another use for local data is a cache to store expensive calculations.
 
 	// NOTE : You can declare local variables here like this  
+    
     int		myCurrPoint;
     int		myTotalPoints;
+    
 };
 } // End HDK_Sample namespace
 

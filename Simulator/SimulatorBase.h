@@ -20,11 +20,11 @@ namespace SPH
 
 	class SimulatorBase : public GenParam::ParameterObject
 	{
-	public: 
+	public:
 		struct SimulationMethod
 		{
 			short simulationMethod = 0;
-			TimeStep *simulation = NULL;
+			TimeStep* simulation = NULL;
 			FluidModel model;
 		};
 
@@ -75,11 +75,11 @@ namespace SPH
 		std::vector<Real> m_renderMinValue;
 		float const* m_colorMapBuffer;
 		unsigned int m_colorMapLength;
-		BoundarySimulator *m_boundarySimulator;
-		Simulator_GUI_Base *m_gui;
+		BoundarySimulator* m_boundarySimulator;
+		Simulator_GUI_Base* m_gui;
 		int m_argc;
 		std::vector<char*> m_argv_vec;
-		char **m_argv;
+		char** m_argv;
 		std::string m_windowName;
 		std::vector<std::string> m_paramTokens;
 		std::function<void()> m_timeStepCB;
@@ -96,13 +96,13 @@ namespace SPH
 #endif
 
 		void initFluidData();
-		void setInitialVelocity(const Vector3r &vel, const Vector3r & angVel, const unsigned int numParticles, Vector3r *fluidParticles, Vector3r *fluidVelocities);
-		void createFluidBlocks(std::map<std::string, unsigned int> &fluidIDs, std::vector<std::vector<Vector3r>> &fluidParticles, std::vector<std::vector<Vector3r>> &fluidVelocities, std::vector<std::vector<unsigned int>> &fluidObjectIds);
+		void setInitialVelocity(const Vector3r& vel, const Vector3r& angVel, const unsigned int numParticles, Vector3r* fluidParticles, Vector3r* fluidVelocities);
+		void createFluidBlocks(std::map<std::string, unsigned int>& fluidIDs, std::vector<std::vector<Vector3r>>& fluidParticles, std::vector<std::vector<Vector3r>>& fluidVelocities, std::vector<std::vector<unsigned int>>& fluidObjectIds);
 		void createEmitters();
 		void createAnimationFields();
 		void buildModel();
 		void setCommandLineParameter();
-		void setCommandLineParameter(GenParam::ParameterObject *paramObj);
+		void setCommandLineParameter(GenParam::ParameterObject* paramObj);
 
 		void createExporters();
 		void cleanupExporters();
@@ -124,7 +124,7 @@ namespace SPH
 		static int EXPORT_OBJECT_SPLITTING;
 		static int CAMERA_POSITION;
 		static int CAMERA_LOOKAT;
-		
+
 		static int ENUM_WALLS_NONE;
 		static int ENUM_WALLS_PARTICLES_ALL;
 		static int ENUM_WALLS_PARTICLES_NO_WALLS;
@@ -133,15 +133,15 @@ namespace SPH
 
 		SimulatorBase();
 		SimulatorBase(const SimulatorBase&) = delete;
-        SimulatorBase& operator=(const SimulatorBase&) = delete;
+		SimulatorBase& operator=(const SimulatorBase&) = delete;
 		virtual ~SimulatorBase();
 
 		virtual void initParameters();
 
 		void run();
-		void init(std::vector<std::string> argv, const std::string &windowName);
-		void init(int argc, char **argv, const std::string &windowName);
-        void initSimulation();
+		void init(std::vector<std::string> argv, const std::string& windowName);
+		void init(int argc, char** argv, const std::string& windowName);
+		void initSimulation();
 		/** This function is called after the simulation scene is loaded and all
 		* parameters are initialized. While reading a scene file several parameters
 		* can change. The deferred init function should initialize all values which
@@ -158,10 +158,10 @@ namespace SPH
 		void setTimeStepCB(std::function<void()> const& callBackFct) { m_timeStepCB = callBackFct; }
 		void setResetCB(std::function<void()> const& callBackFct) { m_resetCB = callBackFct; }
 
-		static void particleInfo(std::vector<std::vector<unsigned int>> &particles);
+		static void particleInfo(std::vector<std::vector<unsigned int>>& particles);
 
-		void initDensityMap(std::vector<Vector3r> &x, std::vector<unsigned int> &faces, const Utilities::BoundaryParameterObject *boundaryData, const bool md5, const bool isDynamic, BoundaryModel_Koschier2017 *boundaryModel);
-		void initVolumeMap(std::vector<Vector3r> &x, std::vector<unsigned int> &faces, const Utilities::BoundaryParameterObject *boundaryData, const bool md5, const bool isDynamic, BoundaryModel_Bender2019 *boundaryModel);
+		void initDensityMap(std::vector<Vector3r>& x, std::vector<unsigned int>& faces, const Utilities::BoundaryParameterObject* boundaryData, const bool md5, const bool isDynamic, BoundaryModel_Koschier2017* boundaryModel);
+		void initVolumeMap(std::vector<Vector3r>& x, std::vector<unsigned int>& faces, const Utilities::BoundaryParameterObject* boundaryData, const bool md5, const bool isDynamic, BoundaryModel_Bender2019* boundaryModel);
 
 		void readParameters();
 
@@ -173,15 +173,15 @@ namespace SPH
 		void singleTimeStep();
 		void saveState(const std::string& stateFile = "");
 		void loadStateDialog();
-		void loadState(const std::string &stateFile);
-		void writeFluidParticlesState(const std::string &fileName, FluidModel *model);
-		void readFluidParticlesState(const std::string &fileName, FluidModel *model);
-		void writeBoundaryState(const std::string &fileName, BoundaryModel *model);
-		void readBoundaryState(const std::string &fileName, BoundaryModel *model);
-		void writeParameterState(BinaryFileWriter &binWriter);
-		void readParameterState(BinaryFileReader &binReader);
-		void writeParameterObjectState(BinaryFileWriter &binWriter, GenParam::ParameterObject *paramObj);
-		void readParameterObjectState(BinaryFileReader &binReader, GenParam::ParameterObject *paramObj);
+		void loadState(const std::string& stateFile);
+		void writeFluidParticlesState(const std::string& fileName, FluidModel* model);
+		void readFluidParticlesState(const std::string& fileName, FluidModel* model);
+		void writeBoundaryState(const std::string& fileName, BoundaryModel* model);
+		void readBoundaryState(const std::string& fileName, BoundaryModel* model);
+		void writeParameterState(BinaryFileWriter& binWriter);
+		void readParameterState(BinaryFileReader& binReader);
+		void writeParameterObjectState(BinaryFileWriter& binWriter, GenParam::ParameterObject* paramObj);
+		void readParameterObjectState(BinaryFileReader& binReader, GenParam::ParameterObject* paramObj);
 
 		void updateBoundaryParticles(const bool forceUpdate);
 		void updateDMVelocity();
@@ -191,7 +191,7 @@ namespace SPH
 		void updateScalarField();
 		void determineMinMaxOfScalarField();
 
-		Utilities::SceneLoader *getSceneLoader() { return m_sceneLoader.get(); }
+		Utilities::SceneLoader* getSceneLoader() { return m_sceneLoader.get(); }
 
 		const std::string& getExePath() const { return m_exePath; }
 
@@ -200,7 +200,7 @@ namespace SPH
 		bool getUseGUI() const { return m_useGUI; }
 		void setUseGUI(bool val) { m_useGUI = val; }
 
-		const std::string& getColorField(const unsigned int fluidModelIndex) {	return m_colorField[fluidModelIndex]; }
+		const std::string& getColorField(const unsigned int fluidModelIndex) { return m_colorField[fluidModelIndex]; }
 		void setColorField(const unsigned int fluidModelIndex, const std::string& fieldName) { m_colorField[fluidModelIndex] = fieldName; }
 
 		int getColorMapType(const unsigned int fluidModelIndex) const { return m_colorMapType[fluidModelIndex]; }
@@ -211,15 +211,15 @@ namespace SPH
 		void setRenderMinValue(const unsigned int fluidModelIndex, Real val) { m_renderMinValue[fluidModelIndex] = val; }
 		std::string getOutputPath() const { return m_outputPath; }
 
-		unsigned int getLastObjectId() const { return m_currentObjectId;  }
+		unsigned int getLastObjectId() const { return m_currentObjectId; }
 
 		std::string getStateFile() const { return m_stateFile; }
 		void setStateFile(std::string val) { m_stateFile = val; }
 
-		SPH::BoundarySimulator * getBoundarySimulator() const { return m_boundarySimulator; }
-		void setBoundarySimulator(SPH::BoundarySimulator * val) { m_boundarySimulator = val; }
-		SPH::Simulator_GUI_Base * getGui() const { return m_gui; }
-		void setGui(SPH::Simulator_GUI_Base * val) { m_gui = val; }
+		SPH::BoundarySimulator* getBoundarySimulator() const { return m_boundarySimulator; }
+		void setBoundarySimulator(SPH::BoundarySimulator* val) { m_boundarySimulator = val; }
+		SPH::Simulator_GUI_Base* getGui() const { return m_gui; }
+		void setGui(SPH::Simulator_GUI_Base* val) { m_gui = val; }
 		bool isStaticScene() const { return m_isStaticScene; }
 
 		void addParticleExporter(const std::string& key, const std::string& name, const std::string& description, ExporterBase* exporter) { m_particleExporters.push_back({ key, name, description, exporter, -1 }); }
@@ -235,10 +235,19 @@ namespace SPH
 		Vector3r getCameraPosition() const { return m_cameraPosition; }
 		Vector3r getCameraLookAt() const { return m_cameraLookAt; }
 
+
+		// New functions for Houdini authoring tool here
+		void setCommandLineParameter_pub();
+		void setCommandLineParameter_pub(GenParam::ParameterObject* paramObj);
+
+		bool myTimeStepNoGUI(int frameCounter, std::vector<std::vector<std::vector<Vector3r>>>& particles_in_frames); // get the position, velocity and angular velocity from this function
+		void myStep();
+
+
 #ifdef USE_EMBEDDED_PYTHON
 		ScriptObject* getScriptObject() { return m_scriptObject; }
 #endif 
 	};
 }
- 
+
 #endif

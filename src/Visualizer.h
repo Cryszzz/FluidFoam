@@ -60,6 +60,8 @@ namespace HDK_Sample
         // read the partio file
         bool readParticles(const std::string& fileName, const std::string& colorAttrName, const std::string& rotationAttrName);
 
+        UT_String SOP_VISUALIZER::getParameters(GA_ROHandleS paraHandle);
+
     private:
         /// The following list of accessors simplify evaluating the parameters
         /// of the SOP.

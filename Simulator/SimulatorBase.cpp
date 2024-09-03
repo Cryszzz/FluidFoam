@@ -608,6 +608,7 @@ void SimulatorBase::runSimulation()
 
 		while (true)
 		{
+			//std::cout << "start time step\n";
 			if (!timeStepNoGUI())
 				break;
 		}
@@ -947,6 +948,7 @@ void SimulatorBase::timeStep()
 bool SimulatorBase::timeStepNoGUI()
 {
 	const Real stopAt = getValue<Real>(SimulatorBase::STOP_AT);
+	//std::cout << "Time: " << TimeManager::getCurrent()->getTime() << std::endl;
 	if ((stopAt > 0.0) && (stopAt < TimeManager::getCurrent()->getTime()))
 		return false;
 
@@ -1573,6 +1575,7 @@ void SimulatorBase::step()
 
 		for (size_t i = 0; i < m_particleExporters.size(); i++)
 		{
+			//std::cout << "Exporter: " << m_particleExporters[i].m_name << "\n";
 			m_particleExporters[i].m_exporter->step(m_frameCounter);
 		}
 		for (size_t i = 0; i < m_rbExporters.size(); i++)
@@ -2884,4 +2887,242 @@ void SimulatorBase::writeSceneFile(const std::string &fileName)
 	}
 
 	writer.writeScene(fileName.c_str());
+}
+
+void SimulatorBase::setCommandLineParameter_pub()
+{
+	Simulation* sim = Simulation::getCurrent();
+	if (m_paramTokens.size() != 3)
+		return;
+
+	setCommandLineParameter((ParameterObject*)sim);
+	setCommandLineParameter((ParameterObject*)sim->getTimeStep());
+#ifdef USE_DEBUG_TOOLS
+	setCommandLineParameter((ParameterObject*)sim->getDebugTools());
+#endif
+
+	for (unsigned int i = 0; i < sim->numberOfFluidModels(); i++)
+	{
+		FluidModel* model = sim->getFluidModel(i);
+		const std::string& key = model->getId();
+
+		if (m_paramTokens[0] == key)
+		{
+			setCommandLineParameter((ParameterObject*)model);
+			setCommandLineParameter((ParameterObject*)model->getXSPH());
+			setCommandLineParameter((ParameterObject*)model->getDragBase());
+			setCommandLineParameter((ParameterObject*)model->getSurfaceTensionBase());
+			setCommandLineParameter((ParameterObject*)model->getViscosityBase());
+			setCommandLineParameter((ParameterObject*)model->getVorticityBase());
+			setCommandLineParameter((ParameterObject*)model->getElasticityBase());
+		}
+	}
+}
+
+void SimulatorBase::setCommandLineParameter_pub(GenParam::ParameterObject* paramObj)
+{
+	if (paramObj == nullptr)
+		return;
+
+	const unsigned int numParams = paramObj->numParameters();
+	for (unsigned int j = 0; j < numParams; j++)
+	{
+		ParameterBase* paramBase = paramObj->getParameter(j);
+		if (m_paramTokens[1] == paramBase->getName())
+		{
+			if (paramBase->getType() == RealParameterType)
+			{
+				const Real val = stof(m_paramTokens[2]);
+				static_cast<NumericParameter<Real>*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::UINT32)
+			{
+				const unsigned int val = stoi(m_paramTokens[2]);
+				static_cast<NumericParameter<unsigned int>*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::UINT16)
+			{
+				const unsigned short val = stoi(m_paramTokens[2]);
+				static_cast<NumericParameter<unsigned short>*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::UINT8)
+			{
+				const unsigned char val = stoi(m_paramTokens[2]);
+				static_cast<NumericParameter<unsigned char>*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::INT32)
+			{
+				const int val = stoi(m_paramTokens[2]);
+				static_cast<NumericParameter<int>*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::INT16)
+			{
+				const short val = stoi(m_paramTokens[2]);
+				static_cast<NumericParameter<short>*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::INT8)
+			{
+				const char val = stoi(m_paramTokens[2]);
+				static_cast<NumericParameter<char>*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::ENUM)
+			{
+				const int val = stoi(m_paramTokens[2]);
+				static_cast<EnumParameter*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == ParameterBase::BOOL)
+			{
+				const bool val = stoi(m_paramTokens[2]);
+				static_cast<BoolParameter*>(paramBase)->setValue(val);
+			}
+			else if (paramBase->getType() == RealVectorParameterType)
+			{
+				if (static_cast<VectorParameter<Real>*>(paramBase)->getDim() == 3)
+				{
+					vector<string> tokens;
+					Utilities::StringTools::tokenize(m_paramTokens[2], tokens, ",");
+					if (tokens.size() == 3)
+					{
+						Vector3r val(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]));
+						static_cast<VectorParameter<Real>*>(paramBase)->setValue(val.data());
+					}
+				}
+			}
+			else if (paramBase->getType() == ParameterBase::STRING)
+			{
+				const std::string val = m_paramTokens[2];
+				static_cast<StringParameter*>(paramBase)->setValue(val);
+			}
+		}
+	}
+}
+
+bool SimulatorBase::myTimeStepNoGUI(int frameCounter, std::vector<std::vector<std::vector<Vector3r>>>& particles_in_frames)
+{
+	const Real stopAt = getValue<Real>(SimulatorBase::STOP_AT);
+	std::cout << "current time: " << TimeManager::getCurrent()->getTime() << std::endl;
+	if ((stopAt > 0.0) && (stopAt < TimeManager::getCurrent()->getTime()))
+		return false;
+
+	// Simulation code
+	Simulation* sim = Simulation::getCurrent();
+	const bool sim2D = sim->is2DSimulation();
+
+	START_TIMING("SimStep");
+	Simulation::getCurrent()->getTimeStep()->step();
+	STOP_TIMING_AVG;
+
+	m_boundarySimulator->timeStep();
+
+	//myStep();
+	std::cout << "number of fluid models:" << sim->numberOfFluidModels() << std::endl;
+
+	// push a frame to the vector
+	std::vector<std::vector<Vector3r>> frame;
+	for (int i = 0; i < sim->numberOfFluidModels(); i++)
+	{
+		FluidModel* model = sim->getFluidModel(i);
+		std::vector<Vector3r> particles;
+		for (unsigned int i = 0; i < model->numActiveParticles(); i++)
+		{
+			particles.push_back(model->getPosition(i)); // position
+			//std::cout << "particle #" << i << " position: " << model->getPosition(i) << std::endl;
+			particles.push_back(model->getVelocity(i)); // velocity
+			particles.push_back(model->getAcceleration(i)); // acceleration
+			std::cout << "particle # position:" << particles[0] << std::endl;
+			frame.push_back(particles);
+		}
+		
+	}
+
+	particles_in_frames.push_back(frame);
+	std::cout << "frame #" << frameCounter << " is pushed to the vector" << std::endl;
+
+	//set the position, velocity and angular velocity of the particles
+	//for (int i = 0; i < sim->numberOfFluidModels(); i++)
+	//{
+	//	FluidModel* model = sim->getFluidModel(i);
+	//	std::cout << "start setting position, velocity and angular velocity of particles in fluid model #" << i << std::endl;
+	//	std::cout << "number of particles in fluid model #" << i << ": " << model->numActiveParticles() << std::endl;
+	//	for (unsigned int i = 0; i < model->numActiveParticles(); i++)
+	//	{
+	//		//std::cout << std::endl << "particle # start setting" << i << std::endl;
+	//		pos.push_back(model->getPosition(i));
+	//		//pos[i] = model->getPosition(i);
+	//		//std::cout << "particle #" << i << " position: " << pos[i] << std::endl;
+	//		vel.push_back(model->getVelocity(i));
+	//		//vel[i] = model->getVelocity(i);
+	//		//std::cout << "particle #" << i << " velocity: " << vel[i] << std::endl;
+	//		//angVel[i] = model->getAngularVelocity(i);
+
+	//	}
+	//}	
+
+//
+	INCREASE_COUNTER("Time step size", TimeManager::getCurrent()->getTimeStepSize());
+//
+//	// Make sure that particles stay in xy-plane in a 2D simulation
+//	if (sim2D)
+//	{
+//		for (unsigned int i = 0; i < sim->numberOfFluidModels(); i++)
+//		{
+//			FluidModel* model = sim->getFluidModel(i);
+//			for (unsigned int i = 0; i < model->numActiveParticles(); i++)
+//			{
+//				model->getPosition(i)[2] = 0.0;
+//				model->getVelocity(i)[2] = 0.0;
+//			}
+//		}
+//	}
+//
+//
+//
+#ifdef USE_DEBUG_TOOLS
+	Simulation::getCurrent()->getDebugTools()->step();
+#endif
+
+	if (m_timeStepCB)
+		m_timeStepCB();
+
+#ifdef USE_EMBEDDED_PYTHON
+	if (m_scriptObject)
+		m_scriptObject->execStepFct();
+#endif
+
+	return true;
+}
+
+void SimulatorBase::myStep()
+{
+	if (TimeManager::getCurrent()->getTime() >= m_nextFrameTime)
+	{
+		m_nextFrameTime += static_cast<Real>(1.0) / m_framesPerSecond;
+
+		for (size_t i = 0; i < m_particleExporters.size(); i++)
+		{
+			m_particleExporters[i].m_exporter->myStep(m_frameCounter);
+		}
+		for (size_t i = 0; i < m_rbExporters.size(); i++)
+			m_rbExporters[i].m_exporter->myStep(m_frameCounter);
+
+		m_frameCounter++;
+	}
+	if (TimeManager::getCurrent()->getTime() >= m_nextFrameTimeState)
+	{
+		m_nextFrameTimeState += static_cast<Real>(1.0) / m_framesPerSecondState;
+		if (m_enableStateExport)
+			saveState();
+	}
+#ifdef DL_OUTPUT
+	if (TimeManager::getCurrent()->getTime() >= m_nextTiming)
+	{
+		LOG_INFO << "---------------------------------------------------------------------------";
+		LOG_INFO << "Time: " << TimeManager::getCurrent()->getTime();
+		Timing::printAverageTimes();
+		Timing::printTimeSums();
+		Counting::printAverageCounts();
+		Counting::printCounterSums();
+		m_nextTiming += 1.0;
+	}
+#endif
 }

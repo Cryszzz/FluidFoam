@@ -34,6 +34,18 @@ void RigidBodyExporter_BIN::step(const unsigned int frame)
 	writeRigidBodies(exportFileName);
 }
 
+void RigidBodyExporter_BIN::myStep(const unsigned int frame)
+{
+	if (!m_active)
+		return;
+
+	std::string fileName = "rb_data_";
+	fileName = fileName + std::to_string(frame) + ".bin";
+	std::string exportFileName = FileSystem::normalizePath(m_exportPath + "/" + fileName);
+
+	writeRigidBodies(exportFileName);
+}
+
 void RigidBodyExporter_BIN::reset()
 {
 	m_isFirstFrame = true;

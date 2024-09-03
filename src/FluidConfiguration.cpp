@@ -25,13 +25,42 @@ namespace fs = std::filesystem;
 static PRM_Name tabName("fluid");
 
 static PRM_Default  tabList[] = {
-	PRM_Default(13, "configuration"),        // 1 is number of parameters in tab
-	PRM_Default(11, "materials"),
+	PRM_Default(14, "configuration"),        // 1 is number of parameters in tab
+	PRM_Default(14, "materials"),
 	PRM_Default(0, "Other")
 };
 
+static PRM_Name CFLMethodList[] = {
+	PRM_Name("0", "No adaptive time stepping"),
+	PRM_Name("1", "Use CFL condition"),
+	PRM_Name("2", "Use CFL condition and consider number of pressure solver iterations"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList CFLMethodMenu(PRM_CHOICELIST_SINGLE,CFLMethodList);
+
+static PRM_Name viscosityList[] = {
+	PRM_Name("0", "None"),
+	PRM_Name("1", "Standard"),
+	PRM_Name("2", "Bender and Koschier 2017"),
+	PRM_Name("3", "Peer et al. 2015"),
+	PRM_Name("4", "Peer et al. 2016"),
+	PRM_Name("5", "Takahashi et al. 2015 (improved)"),
+	PRM_Name("6", "Weiler et al. 2018"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList viscosityMenu(PRM_CHOICELIST_SINGLE,viscosityList);
+
+static PRM_Name vorticityList[] = {
+	PRM_Name("0", "None"),
+	PRM_Name("1", "Micropolar model"),
+	PRM_Name("2", "Vorticity confinement"),
+	PRM_Name(nullptr) // Sentinel to indicate end of list
+};
+static PRM_ChoiceList vorticityMenu(PRM_CHOICELIST_SINGLE,vorticityList);
+
 static PRM_Name ConfigurationNames[] = {
     PRM_Name("timeStepSize", "Initial Time Step Size"),
+	PRM_Name("stopAt", "Stop At Time"),
     PRM_Name("particleRadius", "Particle Radius"),
     PRM_Name("enableZSort", "Enable Z-Sort"),
     PRM_Name("gravitation", "Gravitation"),
@@ -49,6 +78,7 @@ static PRM_Name ConfigurationNames[] = {
 
 static PRM_Default ConfigurationDefaults[] = {
     PRM_Default(0.001f),        // Default initial time step size
+	PRM_Default(10.0f),
     PRM_Default(0.025f),        // Default radius of the particles
     PRM_Default(true),          // Default state for enabling Z-Sort
     PRM_Default(0),   // Default gravitational acceleration vector
@@ -64,6 +94,8 @@ static PRM_Default ConfigurationDefaults[] = {
 };
 
 static PRM_Default gravitationDefaults[] = { PRM_Default(0), PRM_Default(-9.81f), PRM_Default(0) };
+static PRM_Default initialVelocityDefaults[] = { PRM_Default(0), PRM_Default(0.0f), PRM_Default(0.0) };
+static PRM_Default initialAngularVelocityDefaults[] = { PRM_Default(0), PRM_Default(0.0f), PRM_Default(0) };
 
 static PRM_Name MaterialsName[] = {
     PRM_Name("viscosityMethod", "Viscosity Method"),  // Method for viscosity computation
@@ -77,6 +109,9 @@ static PRM_Name MaterialsName[] = {
     PRM_Name("vorticity", "Vorticity"),               // Coefficient for vorticity force computation
     PRM_Name("viscosityOmega", "Viscosity Omega"),    // Viscosity coefficient for the angular velocity (Micropolar model)
     PRM_Name("inertiaInverse", "Inertia Inverse"),  
+	PRM_Name("density", "Density"), 
+	PRM_Name("initialVelocity", "Initial Velocity"), 
+	PRM_Name("initialAngularVelocity", "Initial Angular Velocity"), 
     PRM_Name(0)                                            // End of array marker
 };
 
@@ -91,7 +126,8 @@ static PRM_Default MaterialsDefaults[] = {
     PRM_Default(0),                 // Default vorticity method
     PRM_Default(0.1f),              // Default coefficient for vorticity force computation
     PRM_Default(0.01f),             // Default viscosity coefficient for the angular velocity field (Micropolar model)
-    PRM_Default(1.0f)               // Default inverse microinertia for the Micropolar model
+    PRM_Default(1.0f),             // Default inverse microinertia for the Micropolar model
+	PRM_Default(1000.0f) 
 };
 
 static PRM_Name jsonUpdateName("json_update", "Update JSON");
@@ -117,31 +153,35 @@ SOP_FLUIDCONFIGURATION::myTemplateList[] = {
 	// Configuration tab
 	// Configuration tab
     PRM_Template(PRM_FLT, 1, &ConfigurationNames[0], &ConfigurationDefaults[0]), // Initial Time Step Size
-    PRM_Template(PRM_FLT, 1, &ConfigurationNames[1], &ConfigurationDefaults[1]), // Particle Radius
-    PRM_Template(PRM_TOGGLE, 1, &ConfigurationNames[2], &ConfigurationDefaults[2]), // Enable Z-Sort
-    PRM_Template(PRM_XYZ, 3, &ConfigurationNames[3], gravitationDefaults), // Gravitation
-    PRM_Template(PRM_INT, 1, &ConfigurationNames[4], &ConfigurationDefaults[4]), // Max Iterations
-    PRM_Template(PRM_FLT, 1, &ConfigurationNames[5], &ConfigurationDefaults[5]), // Max Error
-    PRM_Template(PRM_TOGGLE, 1, &ConfigurationNames[6], &ConfigurationDefaults[6]), // Enable Divergence Solver
-    PRM_Template(PRM_INT, 1, &ConfigurationNames[7], &ConfigurationDefaults[7]), // Max Iterations of Divergence Solver
-    PRM_Template(PRM_FLT, 1, &ConfigurationNames[8], &ConfigurationDefaults[8]), // Max Divergence Error
-    PRM_Template(PRM_ORD, 1, &ConfigurationNames[9], &ConfigurationDefaults[9]), // CFL Method
-    PRM_Template(PRM_FLT, 1, &ConfigurationNames[10], &ConfigurationDefaults[10]), // CFL Factor
-    PRM_Template(PRM_FLT, 1, &ConfigurationNames[11], &ConfigurationDefaults[11]), // CFL Min Time Step Size
-    PRM_Template(PRM_FLT, 1, &ConfigurationNames[12], &ConfigurationDefaults[12]), // CFL Max Time Step Size
+	PRM_Template(PRM_FLT, 1, &ConfigurationNames[1], &ConfigurationDefaults[1]), 
+    PRM_Template(PRM_FLT, 1, &ConfigurationNames[2], &ConfigurationDefaults[2]), // Particle Radius
+    PRM_Template(PRM_TOGGLE, 1, &ConfigurationNames[3], &ConfigurationDefaults[3]), // Enable Z-Sort
+    PRM_Template(PRM_XYZ, 3, &ConfigurationNames[4], gravitationDefaults), // Gravitation
+    PRM_Template(PRM_INT, 1, &ConfigurationNames[5], &ConfigurationDefaults[5]), // Max Iterations
+    PRM_Template(PRM_FLT, 1, &ConfigurationNames[6], &ConfigurationDefaults[6]), // Max Error
+    PRM_Template(PRM_TOGGLE, 1, &ConfigurationNames[7], &ConfigurationDefaults[7]), // Enable Divergence Solver
+    PRM_Template(PRM_INT, 1, &ConfigurationNames[8], &ConfigurationDefaults[8]), // Max Iterations of Divergence Solver
+    PRM_Template(PRM_FLT, 1, &ConfigurationNames[9], &ConfigurationDefaults[9]), // Max Divergence Error
+    PRM_Template(PRM_ORD, 1, &ConfigurationNames[10], &ConfigurationDefaults[10],  &CFLMethodMenu), // CFL Method
+    PRM_Template(PRM_FLT, 1, &ConfigurationNames[11], &ConfigurationDefaults[11]), // CFL Factor
+    PRM_Template(PRM_FLT, 1, &ConfigurationNames[12], &ConfigurationDefaults[12]), // CFL Min Time Step Size
+    PRM_Template(PRM_FLT, 1, &ConfigurationNames[13], &ConfigurationDefaults[13]), // CFL Max Time Step Size
 
     // Materials tab
-    PRM_Template(PRM_ORD, 1, &MaterialsName[0], &MaterialsDefaults[0]), // Viscosity Method
+    PRM_Template(PRM_ORD, 1, &MaterialsName[0], &MaterialsDefaults[0],&viscosityMenu), // Viscosity Method
     PRM_Template(PRM_FLT, 1, &MaterialsName[1], &MaterialsDefaults[1]), // Viscosity
     PRM_Template(PRM_INT, 1, &MaterialsName[2], &MaterialsDefaults[2]), // Max Viscosity Iterations
     PRM_Template(PRM_FLT, 1, &MaterialsName[3], &MaterialsDefaults[3]), // Max Viscosity Error
     PRM_Template(PRM_INT, 1, &MaterialsName[4], &MaterialsDefaults[4]), // Max Iterations for Vorticity Diffusion
     PRM_Template(PRM_FLT, 1, &MaterialsName[5], &MaterialsDefaults[5]), // Max Error for Vorticity Diffusion
     PRM_Template(PRM_FLT, 1, &MaterialsName[6], &MaterialsDefaults[6]), // Boundary Viscosity
-    PRM_Template(PRM_ORD, 1, &MaterialsName[7], &MaterialsDefaults[7]), // Vorticity Method
+    PRM_Template(PRM_ORD, 1, &MaterialsName[7], &MaterialsDefaults[7],&vorticityMenu), // Vorticity Method
     PRM_Template(PRM_FLT, 1, &MaterialsName[8], &MaterialsDefaults[8]), // Vorticity
     PRM_Template(PRM_FLT, 1, &MaterialsName[9], &MaterialsDefaults[9]), // Viscosity Omega
     PRM_Template(PRM_FLT, 1, &MaterialsName[10], &MaterialsDefaults[10]), // Inertia Inverse
+	PRM_Template(PRM_FLT, 1, &MaterialsName[11], &MaterialsDefaults[11]), // Inertia Inverse
+	PRM_Template(PRM_XYZ, 3, &MaterialsName[12], initialVelocityDefaults), 
+	PRM_Template(PRM_XYZ, 3, &MaterialsName[13], initialAngularVelocityDefaults), 
 
 	PRM_Template() // Sentinel
 };
@@ -210,21 +250,22 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
 {
 	fpreal	now = context.getTime();
 	float initialTimeStepSize = evalFloat(ConfigurationNames[0].getToken(), 0, now);
-	float particleRadius = evalFloat(ConfigurationNames[1].getToken(), 0, now);
-	bool enableZSort = evalInt(ConfigurationNames[2].getToken(), 0, now) != 0;
-	float gravitationX = evalFloat(ConfigurationNames[3].getToken(), 0, now);
-	float gravitationY = evalFloat(ConfigurationNames[3].getToken(), 1, now);
-	float gravitationZ = evalFloat(ConfigurationNames[3].getToken(), 2, now);
+	float stopAt = evalFloat(ConfigurationNames[1].getToken(), 0, now);
+	float particleRadius = evalFloat(ConfigurationNames[2].getToken(), 0, now);
+	bool enableZSort = evalInt(ConfigurationNames[3].getToken(), 0, now) != 0;
+	float gravitationX = evalFloat(ConfigurationNames[4].getToken(), 0, now);
+	float gravitationY = evalFloat(ConfigurationNames[4].getToken(), 1, now);
+	float gravitationZ = evalFloat(ConfigurationNames[4].getToken(), 2, now);
 	UT_Vector3 gravitation(gravitationX, gravitationY, gravitationZ);
-	int maxIterations = evalInt(ConfigurationNames[4].getToken(), 0, now);
-	float maxError = evalFloat(ConfigurationNames[5].getToken(), 0, now);
-	bool enableDivergenceSolver = evalInt(ConfigurationNames[6].getToken(), 0, now) != 0;
-	int maxIterationsDivergenceSolver = evalInt(ConfigurationNames[7].getToken(), 0, now);
-	float maxErrorDivergence = evalFloat(ConfigurationNames[8].getToken(), 0, now);
-	int cflMethod = evalInt(ConfigurationNames[9].getToken(), 0, now);
-	float cflFactor = evalFloat(ConfigurationNames[10].getToken(), 0, now);
-	float cflMinTimeStepSize = evalFloat(ConfigurationNames[11].getToken(), 0, now);
-	float cflMaxTimeStepSize = evalFloat(ConfigurationNames[12].getToken(), 0, now);
+	int maxIterations = evalInt(ConfigurationNames[5].getToken(), 0, now);
+	float maxError = evalFloat(ConfigurationNames[6].getToken(), 0, now);
+	bool enableDivergenceSolver = evalInt(ConfigurationNames[7].getToken(), 0, now) != 0;
+	int maxIterationsDivergenceSolver = evalInt(ConfigurationNames[8].getToken(), 0, now);
+	float maxErrorDivergence = evalFloat(ConfigurationNames[9].getToken(), 0, now);
+	int cflMethod = evalInt(ConfigurationNames[10].getToken(), 0, now);
+	float cflFactor = evalFloat(ConfigurationNames[11].getToken(), 0, now);
+	float cflMinTimeStepSize = evalFloat(ConfigurationNames[12].getToken(), 0, now);
+	float cflMaxTimeStepSize = evalFloat(ConfigurationNames[13].getToken(), 0, now);
 
 	int viscosityMethod = evalInt(MaterialsName[0].getToken(), 0, now);
 	float viscosity = evalFloat(MaterialsName[1].getToken(), 0, now);
@@ -237,6 +278,15 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
 	float vorticity = evalFloat(MaterialsName[8].getToken(), 0, now);
 	float viscosityOmega = evalFloat(MaterialsName[9].getToken(), 0, now);
 	float inertiaInverse = evalFloat(MaterialsName[10].getToken(), 0, now);
+	float density = evalFloat(MaterialsName[11].getToken(), 0, now);
+	float initialVelocityX = evalFloat(MaterialsName[12].getToken(), 0, now);
+	float initialVelocityY = evalFloat(MaterialsName[12].getToken(), 1, now);
+	float initialVelocityZ = evalFloat(MaterialsName[12].getToken(), 2, now);
+	UT_Vector3 initialVelocity(initialVelocityX, initialVelocityY, initialVelocityZ);
+	float initialAngularVelocityX = evalFloat(MaterialsName[13].getToken(), 0, now);
+	float initialAngularVelocityY = evalFloat(MaterialsName[13].getToken(), 1, now);
+	float initialAngularVelocityZ = evalFloat(MaterialsName[13].getToken(), 2, now);
+	UT_Vector3 initialAngularVelocity(initialAngularVelocityX, initialAngularVelocityY, initialAngularVelocityZ);
 	// Now that you have all the branches ,which is the start and end point of each point ,its time to render 
 	// these branches into Houdini 
 	UT_String fluidFilePath;
@@ -264,14 +314,6 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
     if (error() < UT_ERROR_ABORT)
     {
 	boss = UTgetInterrupt();
-	if (divisions < 4)
-	{
-	    // With the range restriction we have on the divisions, this
-	    //	is actually impossible, but it shows how to add an error
-	    //	message or warning to the SOP.
-	    addWarning(SOP_MESSAGE, "Invalid divisions");
-	    divisions = 4;
-	}
 	gdp->clearAndDestroy();
 
 	// Start the interrupt server
@@ -303,39 +345,42 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
 						paramValue = std::to_string(initialTimeStepSize);
 						break;
 					case 1: // particleRadius
+						paramValue = std::to_string(stopAt);
+						break;
+					case 2: // particleRadius
 						paramValue = std::to_string(particleRadius);
 						break;
-					case 2: // enableZSort
+					case 3: // enableZSort
 						paramValue = enableZSort ? "1" : "0";
 						break;
-					case 3: // gravitation
+					case 4: // gravitation
 						paramValue = std::to_string(gravitationX) + "," + std::to_string(gravitationY) + "," + std::to_string(gravitationZ);
 						break;
-					case 4: // maxIterations
+					case 5: // maxIterations
 						paramValue = std::to_string(maxIterations);
 						break;
-					case 5: // maxError
+					case 6: // maxError
 						paramValue = std::to_string(maxError);
 						break;
-					case 6: // enableDivergenceSolver
+					case 7: // enableDivergenceSolver
 						paramValue = enableDivergenceSolver ? "1" : "0";
 						break;
-					case 7: // maxIterationsDivergenceSolver
+					case 8: // maxIterationsDivergenceSolver
 						paramValue = std::to_string(maxIterationsDivergenceSolver);
 						break;
-					case 8: // maxErrorDivergence
+					case 9: // maxErrorDivergence
 						paramValue = std::to_string(maxErrorDivergence);
 						break;
-					case 9: // cflMethod
+					case 10: // cflMethod
 						paramValue = std::to_string(cflMethod);
 						break;
-					case 10: // cflFactor
+					case 11: // cflFactor
 						paramValue = std::to_string(cflFactor);
 						break;
-					case 11: // cflMinTimeStepSize
+					case 12: // cflMinTimeStepSize
 						paramValue = std::to_string(cflMinTimeStepSize);
 						break;
-					case 12: // cflMaxTimeStepSize
+					case 13: // cflMaxTimeStepSize
 						paramValue = std::to_string(cflMaxTimeStepSize);
 						break;
 					default:
@@ -391,6 +436,15 @@ SOP_FLUIDCONFIGURATION::cookMySop(OP_Context &context)
 						break;
 					case 10: // inertiaInverse
 						paramValue = std::to_string(inertiaInverse);
+						break;
+					case 11: // inertiaInverse
+						paramValue = std::to_string(density);
+						break;
+					case 12: // inertiaInverse
+						paramValue = std::to_string(initialVelocityX) + "," + std::to_string(initialVelocityY) + "," + std::to_string(initialVelocityZ);
+						break;
+					case 13: // inertiaInverse
+						paramValue = std::to_string(initialAngularVelocityX) + "," + std::to_string(initialAngularVelocityY) + "," + std::to_string(initialAngularVelocityZ);
 						break;
 					default:
 						break;
