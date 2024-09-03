@@ -1,11 +1,17 @@
 # FluidFoam
 
-Use cmake to build the project.
+This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH fluid with Foam](https://animation.rwth-aachen.de/media/papers/2018-TVCG-MPSPH.pdf). This tool brings realistic fluid and foam generation capabilities to Houdini, filling gaps in existing functionality.
 
-Change the Houdini path in the cmakeList file to be the path where your Houdini is installed.
+### Motivation
 
+- Realistic Fluid-Foam Simulation: Achieving realistic fluid-foam interactions is challenging, especially within the confines of Houdini’s current toolset.
+- Lack of SPH Fluid Solver in Houdini: Houdini does not have a built-in Smoothed Particle Hydrodynamics (SPH) fluid solver, which is essential for simulating detailed fluid dynamics.
+- No Native Foam Particle Generation: Houdini’s native tools do not support foam particle generation, which is crucial for realistic water simulation.
 
-## *Workflow* 
+### Workflow
+
+![workflow](/img_videos/workflow.png)
+
 To use our authoring tool, the user should first create a geometry node in Houdini and double click into the subnet work since our custom nodes are SOP nodes and must be placed inside a geometry network. 
 
 Then the user should place a Fluid Configuration Node by searching “FluidConfiguration”, and set the simulation parameters. The geometry file for the shape of the fluid model should be in obj file format. This parameter must be set in order to run the simulation.
