@@ -12,6 +12,19 @@ This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH
 
 ![workflow](/img_videos/workflow.png)
 
+There are in total five nodes can be utilized to do the simulation. 
+
+#### Fluid Configuration
+
+#### RigidBody
+
+#### Fluid Simulator
+
+#### Foam Generation
+
+#### Visualizer
+
+
 To use our authoring tool, the user should first create a geometry node in Houdini and double click into the subnet work since our custom nodes are SOP nodes and must be placed inside a geometry network. 
 
 Then the user should place a Fluid Configuration Node by searching “FluidConfiguration”, and set the simulation parameters. The geometry file for the shape of the fluid model should be in obj file format. This parameter must be set in order to run the simulation.
@@ -30,3 +43,8 @@ Set a Visualizer node by searching “MyVisualizer”. Link the output of the Fo
 
 The users then can use other default nodes in Houdini to apply shaders and rendering techniques to the particle points.
 
+### Result
+
+![Foam Result](/img_videos/foamResult.png)
+
+This is result differences between different types of foam generated from fluid. 
