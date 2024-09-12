@@ -12,17 +12,7 @@ This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH
 
 ![workflow](/img_videos/workflow.png)
 
-There are in total five nodes can be utilized to do the simulation. 
-
-#### Fluid Configuration
-
-#### RigidBody
-
-#### Fluid Simulator
-
-#### Foam Generation
-
-#### Visualizer
+There are in total five nodes can be utilized to do the simulation, see [detailed instructions](./instructions.md). 
 
 
 To use our authoring tool, the user should first create a geometry node in Houdini and double click into the subnet work since our custom nodes are SOP nodes and must be placed inside a geometry network. 
