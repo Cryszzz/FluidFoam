@@ -4,8 +4,6 @@ This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH
 
 ### Rendered Results
 
-![videos](https://github.com/Cryszzz/FluidFoam/edit/master/img_videos/fluidTypes.mp4)
-
 https://github.com/user-attachments/assets/6898d2be-3e87-4b22-819d-47f92c014ed7
 
 
