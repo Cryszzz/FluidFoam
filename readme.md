@@ -5,9 +5,10 @@ This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH
 ### Rendered Results
 
 <video width="320" height="240" controls>
-  <source src="img_videos/fluidTypes.mp4" type="video/mp4">
+  <source src="" type="video/mp4">
 </video>
 
+[img_videos/fluidTypes.mp4](https://github.com/Cryszzz/FluidFoam/blob/master/img_videos/demo.mp4)
 ![](./img_videos/demo.mp4)
 ![](./img_videos/fluidTypes.mp4)
 
