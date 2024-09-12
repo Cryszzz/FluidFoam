@@ -2,6 +2,12 @@
 
 This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH fluid with Foam](https://animation.rwth-aachen.de/media/papers/2018-TVCG-MPSPH.pdf). This tool brings realistic fluid and foam generation capabilities to Houdini, filling gaps in existing functionality.
 
+### Rendered Results
+
+<video width="320" height="240" controls>
+  <source src="https://github.com/Cryszzz/FluidFoam/img_video/demo.mov" type="video/mp4">
+</video>
+
 ![](./img_videos/demo.mov)
 ![](./img_videos/fluidTypes.mp4)
 
