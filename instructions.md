@@ -11,13 +11,24 @@ Then the user should place a Fluid Configuration Node by searching **“FluidCon
 In the **“Fluid File Path”** parameter, the user should choose an obj file as the shape of the fluid model.
 There are two tabs for the fluid configuration node: **configuration tab** and **material tab**. The configuration tab has parameters that are related to the SPH simulation settings such as timestep and SPH solver types. 
 
+|![](img_videos/houdiniScreenshots/configuration1.png) |
+|:--:|
+| *Parameters for General Configuration Tab* |
+
 
 The material tab focuses on the physical properties of the fluid such as viscosity and vorticity.
+
+|![](img_videos/houdiniScreenshots/configuration2.png) |
+|:--:|
+| *Parameters for Material Configuration Tab* |
 
 
 ### RigidBody
 
 Search for the **“RigidBody”** and add a Rigid Body node. The user should **at least set a Rigid Body node as the bounding box** of the simulation scene. If the rigid body is to be set as a bounding box, the user must check the **“IsWall”** flag so the fluid will collide on the inside face of the rigid body geometry. 
+
+
+
 
 ### Fluid Simulator
 
