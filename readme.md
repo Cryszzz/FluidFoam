@@ -8,7 +8,7 @@ This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH
   <source src="img_videos/fluidTypes.mp4" type="video/mp4">
 </video>
 
-![](./img_videos/demo.mov)
+![](./img_videos/demo.mp4)
 ![](./img_videos/fluidTypes.mp4)
 
 ### Motivation
