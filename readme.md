@@ -8,6 +8,8 @@ This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH
   <source src="https://github.com/Cryszzz/FluidFoam/edit/master/img_videos/fluidTypes.mp4" type="video/mp4">
 </video>
 
+<video src='img_videos/fluidTypes.mp4' width=180/>
+  
 ### Motivation
 
 - Realistic Fluid-Foam Simulation: Achieving realistic fluid-foam interactions is challenging, especially within the confines of Houdini’s current toolset.
