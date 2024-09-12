@@ -5,7 +5,7 @@ This is the Houdini Plugin tool that is based on paper [Turbulent Micropolar SPH
 ### Rendered Results
 
 <video width="320" height="240" controls>
-  <source src="https://github.com/Cryszzz/FluidFoam/img_videos/demo.mov" type="video/mp4">
+  <source src="https://github.com/Cryszzz/FluidFoam/edit/img_videos/demo.mov" type="video/mp4">
 </video>
 
 ![](./img_videos/demo.mov)
