@@ -27,7 +27,9 @@ The material tab focuses on the physical properties of the fluid such as viscosi
 
 Search for the **“RigidBody”** and add a Rigid Body node. The user should **at least set a Rigid Body node as the bounding box** of the simulation scene. If the rigid body is to be set as a bounding box, the user must check the **“IsWall”** flag so the fluid will collide on the inside face of the rigid body geometry. 
 
-
+|![](img_videos/houdiniScreenshots/rigidBody.png) |
+|:--:|
+| *Parameters for Rigid Body Tab* |
 
 
 ### Fluid Simulator
@@ -36,14 +38,40 @@ Set a Simulation node by searching “FluidSimulator”. Then link the output of
 
 In the simulation node, the user can set a folder for the cached fluid particle data. If not set, the folder will be the directory where the houdini file is stored. To simulate with the configuration, the user should click the “simulation” button. 
 
+|![](img_videos/houdiniScreenshots/simulator.png) |
+|:--:|
+| *Parameters for Simulator Tab* |
+
 Set a Visualizer node by searching “MyVisualizer”. Link the output of the Simulator Node to visualize the particles as points in the scene.
 
 ### Foam Generation
 
 Set a Foam Generator node by searching “FoamGenerator”. Set parameters for the foam simulation and whether split types for foams. Link the simulation node’s output to the input of this node and click the “simulate” button. 
 
+Not Automatic: check this box so the users can set parameters that affect foam simulation.
+
+Split foam types: check this box to generate three different foam types.
+
+|![](img_videos/houdiniScreenshots/foamGen.png) | ![](img_videos/houdiniScreenshots/foamGen2.png) |
+|:--:|:--:|
+| *Parameters for Foam Tab without Auto Type Selections* | *Parameters for Foam Tab with Auto Type Selections* | 
+
+
 ### Visualizer
 
 Set a Visualizer node by searching “MyVisualizer”. Link the output of the Foam Generator Node to visualize the particles as points in the scene. If the user chooses to use split types for foams, they should choose which type of foam to visualize by selecting from a drop-down menu.
 
+|![](img_videos/houdiniScreenshots/visualizer.png) |
+|:--:|
+| *Parameters for Visualizer Tab* |
+
 The users then can use other default nodes in Houdini to apply shaders and rendering techniques to the particle points.
+
+### Node Workflow
+
+A typical houdini workflow for our project is shown below:
+
+|![](img_videos/houdiniScreenshots/workflow.png) |
+|:--:|
+| *Houdini Nodes Workflow* |
+
