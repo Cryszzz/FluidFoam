@@ -40,3 +40,5 @@ This is a detailed result differences between different types of foam generated 
 
 Basic post-processing step: diffuse particles with less than six fluid neighbors are considered as spray particle. Particles with more than 20 fluid neighbors are classified as air bubbles. In all other cases, particles are
 considered to be foam. 
+
+Usage: users should be able to use each types of particles separately for their stylizations once they enable the splittypes. 
